@@ -22,15 +22,14 @@ export default async function ReceptionPage({
 }) {
   const date = searchParams.date ?? todayDateParam();
   const rows = await listAppointmentsForDay(date);
-  const checkout = rows.filter(r => matchesWorkflow(r, workflowForReceptionCheckout()) && r.appointment.status !== 'fulfilled' && r.appointment.status !== 'noshow' && r.appointment.status !== 'cancelled');
-  const billing = rows.filter(r => matchesWorkflow(r, workflowForBilling()) && r.appointment.status !== 'fulfilled' && r.appointment.status !== 'noshow' && r.appointment.status !== 'cancelled');
   const board = rows.filter(
     r =>
       r.appointment.status !== 'fulfilled'
       && r.appointment.status !== 'noshow'
-      && r.appointment.status !== 'cancelled'
-      && !matchesWorkflow(r, workflowForReceptionCheckout()),
+      && r.appointment.status !== 'cancelled',
   );
+  const checkout = rows.filter(r => matchesWorkflow(r, workflowForReceptionCheckout()));
+  const billing = rows.filter(r => matchesWorkflow(r, workflowForBilling()));
 
   return (
     <div className="p-6 max-w-5xl">
