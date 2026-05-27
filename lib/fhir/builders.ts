@@ -340,10 +340,31 @@ export const buildPractitioner = (args: {
       code: {
         coding: [{
           system: 'http://terminology.hl7.org/CodeSystem/v2-0360',
-          code: args.role === 'doctor' ? 'MD' : 'RN',
-          display: args.role === 'doctor' ? 'Doctor of Medicine' : 'Registered Nurse',
+          code:
+            args.role === 'doctor'
+              ? 'MD'
+              : args.role === 'nurse'
+                ? 'RN'
+                : args.role === 'reception'
+                  ? 'REC'
+                  : 'ADM',
+          display:
+            args.role === 'doctor'
+              ? 'Doctor of Medicine'
+              : args.role === 'nurse'
+                ? 'Registered Nurse'
+                : args.role === 'reception'
+                  ? 'Reception staff'
+                  : 'Administrator',
         }],
-        text: args.role === 'doctor' ? 'Physician' : 'Registered nurse',
+        text:
+          args.role === 'doctor'
+            ? 'Physician'
+            : args.role === 'nurse'
+              ? 'Registered nurse'
+              : args.role === 'reception'
+                ? 'Reception'
+                : 'Administrator',
       },
     }],
   };
