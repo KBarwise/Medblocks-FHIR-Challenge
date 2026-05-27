@@ -84,6 +84,7 @@ export function ConsultChart({
   const stepIndex = CONSULT_CHART_STEP_ORDER.indexOf(step);
   const isLastStep = stepIndex === CONSULT_CHART_STEP_ORDER.length - 1;
   const agent = CONSULT_AGENTS.find(a => a.code === form.agentCode) ?? CONSULT_AGENTS[0];
+  const hasFamilyHistoryContraindication = form.familyHistoryMen2 || form.familyHistoryMtc;
 
   useEffect(() => {
     setHydrated(false);
@@ -252,6 +253,7 @@ export function ConsultChart({
       setStepError(err);
       if (!form.reason.trim()) setStep('encounter');
       else if (form.diagnoses.length === 0) setStep('diagnoses');
+      else if (form.prescribeIncretin && hasFamilyHistoryContraindication) setStep('screening');
       return;
     }
 
@@ -276,6 +278,10 @@ export function ConsultChart({
           diagnoses: form.diagnoses,
           labPanels: form.labPanels,
           medications: form.medications,
+          familyHistory: {
+            men2: form.familyHistoryMen2,
+            medullaryThyroidCarcinoma: form.familyHistoryMtc,
+          },
           prescribeIncretin: form.prescribeIncretin
             ? {
                 agentCode: form.agentCode,
@@ -297,6 +303,14 @@ export function ConsultChart({
   }
 
   function sendToNurse() {
+    if (
+      !window.confirm(
+        'Send this patient back to the nurse queue? The consultation will stay open and your draft is kept on this device.',
+      )
+    ) {
+      return;
+    }
+
     setStepError(null);
     setResult(null);
     startTransition(async () => {
@@ -485,6 +499,36 @@ export function ConsultChart({
       )}
 
       {step === 'screening' && <PrescriptionScreeningPanel screening={screening} compact />}
+      {step === 'screening' && (
+        <section className="border border-ink-100 rounded-lg p-4 bg-white space-y-3">
+          <h3 className="text-sm font-medium">Family history contraindications</h3>
+          <p className="text-[12px] text-ink-500">
+            Check for family history that contraindicates GLP-1 therapy.
+          </p>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.familyHistoryMen2}
+              onChange={e => updateForm(prev => ({ ...prev, familyHistoryMen2: e.target.checked }))}
+            />
+            <span>Family history of MEN2</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.familyHistoryMtc}
+              onChange={e => updateForm(prev => ({ ...prev, familyHistoryMtc: e.target.checked }))}
+            />
+            <span>Family history of medullary thyroid carcinoma (MTC)</span>
+          </label>
+          {form.prescribeIncretin && hasFamilyHistoryContraindication && (
+            <p className="text-[12px] text-danger bg-danger-soft px-3 py-2 rounded-md">
+              Contraindication: do not prescribe GLP-1 therapy when family history includes MEN2 or
+              medullary thyroid carcinoma.
+            </p>
+          )}
+        </section>
+      )}
 
       {step === 'plan' && (
         <>

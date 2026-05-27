@@ -42,6 +42,8 @@ export type ConsultChartForm = {
   reason: string;
   symptoms: string[];
   diagnoses: ConsultDiagnosis[];
+  familyHistoryMen2: boolean;
+  familyHistoryMtc: boolean;
   labPanels: string[];
   prescribeIncretin: boolean;
   agentCode: string;
@@ -57,6 +59,8 @@ export function emptyConsultChartForm(): ConsultChartForm {
     reason: '',
     symptoms: [],
     diagnoses: [],
+    familyHistoryMen2: false,
+    familyHistoryMtc: false,
     labPanels: ['lft', 'lipase'],
     prescribeIncretin: true,
     agentCode: CONSULT_AGENTS[0].code,
@@ -183,6 +187,8 @@ export function parseConsultChartDraft(raw: string | null): ConsultChartForm | n
       reason: typeof parsed.reason === 'string' ? parsed.reason : '',
       symptoms: Array.isArray(parsed.symptoms) ? parsed.symptoms : [],
       diagnoses,
+      familyHistoryMen2: Boolean(parsed.familyHistoryMen2),
+      familyHistoryMtc: Boolean(parsed.familyHistoryMtc),
       labPanels: Array.isArray(parsed.labPanels) ? parsed.labPanels : ['lft', 'lipase'],
       prescribeIncretin: parsed.prescribeIncretin ?? parsed.prescribe !== false,
       agentCode,
@@ -217,6 +223,8 @@ export function consultChartHasData(form: ConsultChartForm): boolean {
     form.reason.trim() !== ''
     || form.symptoms.length > 0
     || form.diagnoses.length > 0
+    || form.familyHistoryMen2
+    || form.familyHistoryMtc
     || form.medications.length > 0
   );
 }
@@ -237,5 +245,8 @@ export function validateConsultChartStep(
 export function validateConsultChartComplete(form: ConsultChartForm): string | null {
   if (!form.reason.trim()) return 'Reason for encounter is required';
   if (form.diagnoses.length === 0) return 'Select at least one diagnosis';
+  if (form.prescribeIncretin && (form.familyHistoryMen2 || form.familyHistoryMtc)) {
+    return 'GLP-1 therapy is contraindicated with family history of MEN2 or medullary thyroid carcinoma.';
+  }
   return null;
 }
