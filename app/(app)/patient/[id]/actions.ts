@@ -334,6 +334,10 @@ export async function submitConsultation(args: {
   symptomCodes: string[];
   symptomLabels: Record<string, string>;
   diagnoses: ConsultDiagnosis[];
+  familyHistory?: {
+    men2: boolean;
+    medullaryThyroidCarcinoma: boolean;
+  };
   prescribeIncretin?: {
     agentCode: string;
     doseValue: number;
@@ -345,6 +349,14 @@ export async function submitConsultation(args: {
   labPanels: string[];
 }): Promise<{ encounterId?: string; resources: number }> {
   assertClinicalWrite();
+  if (
+    args.prescribeIncretin
+    && (args.familyHistory?.men2 || args.familyHistory?.medullaryThyroidCarcinoma)
+  ) {
+    throw new Error(
+      'Cannot prescribe GLP-1 therapy with family history of MEN2 or medullary thyroid carcinoma.',
+    );
+  }
   let count = 0;
 
   const condBundle = await fhir.search<Bundle<Condition>>('Condition', {
