@@ -78,9 +78,6 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
   const nurseDocHref = row.patientId
     ? `/patient/${row.patientId}/nurse?appointment=${id}`
     : null;
-  const doctorChartHref = row.patientId
-    ? `/patient/${row.patientId}?appointment=${id}`
-    : null;
   const doctorDocHref = row.patientId
     ? `/patient/${row.patientId}/consult/document?appointment=${id}`
     : null;
@@ -132,23 +129,20 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
         )}
         {deskRole === 'nurse' && row.patientId && (
           <>
-            {(wf === 'waiting-nurse' || wf === 'return-nurse') && nurseDocHref && (
+            {(wf === 'waiting-nurse' || wf === 'return-nurse' || wf === 'nurse-in-progress') && nurseDocHref && (
               <ActionBtn
                 disabled={pending}
                 onClick={() =>
                   run(async () => {
-                    await advanceVisitWorkflow(id, 'nurse-in-progress', 'arrived');
+                    if (wf !== 'nurse-in-progress') {
+                      await advanceVisitWorkflow(id, 'nurse-in-progress', 'arrived');
+                    }
                     router.push(nurseDocHref);
                   })
                 }
               >
                 Start
               </ActionBtn>
-            )}
-            {wf === 'nurse-in-progress' && nurseDocHref && (
-              <Link href={nurseDocHref} className="text-info text-[12px] px-1">
-                Documentation
-              </Link>
             )}
             {(wf === 'nurse-in-progress' || wf === 'return-nurse') && (
               <ActionBtn disabled={pending} onClick={() => run(() => advanceVisitWorkflow(id, 'ready-for-doctor'))}>
@@ -157,7 +151,7 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
             )}
           </>
         )}
-        {deskRole === 'doctor' && row.patientId && doctorChartHref && (
+        {deskRole === 'doctor' && row.patientId && doctorDocHref && (
           <>
             {(wf === 'ready-for-doctor' || wf === 'doctor-in-progress') && (
               <ActionBtn
@@ -167,17 +161,12 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
                     if (wf === 'ready-for-doctor') {
                       await advanceVisitWorkflow(id, 'doctor-in-progress', 'arrived');
                     }
-                    router.push(doctorChartHref);
+                    router.push(doctorDocHref);
                   })
                 }
               >
                 Start
               </ActionBtn>
-            )}
-            {wf === 'doctor-in-progress' && doctorDocHref && (
-              <Link href={doctorDocHref} className="text-info text-[12px] px-1">
-                Documentation
-              </Link>
             )}
           </>
         )}
