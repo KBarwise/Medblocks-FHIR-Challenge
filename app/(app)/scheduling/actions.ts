@@ -3,15 +3,16 @@
 import { revalidatePath } from 'next/cache';
 import {
   createAppointment,
-  findAnyActiveAppointmentForPatient,
   findActiveDoctorAppointmentForPatient,
   findActiveNurseAppointmentForPatient,
+  listAppointmentsForDay,
   updateAppointmentStatus,
   updateVisitWorkflow,
 } from '@/lib/fhir/appointments';
 import { canViewClinicalData } from '@/lib/clinic/access';
 import { getActingRoleFromCookie } from '@/lib/clinic/server-role';
-import type { ClinicRole } from '@/lib/clinical/scheduling';
+import { todayDateParam, type ClinicRole } from '@/lib/clinical/scheduling';
+import { acknowledgeReturningSymptomReport } from '@/lib/kiosk/symptom-report-store';
 import type { VisitWorkflow } from '@/lib/clinical/workflow';
 import type { Appointment } from '@/lib/fhir/resources';
 
@@ -21,16 +22,89 @@ function revalidateScheduling() {
   revalidatePath('/clinic/doctor');
 }
 
+function assertReceptionOrAdmin(): void {
+  const role = getActingRoleFromCookie();
+  if (role !== 'reception' && role !== 'admin') {
+    throw new Error('Only reception staff can perform this action.');
+  }
+}
+
 export async function bookAppointment(args: {
   patientId: string;
   patientName?: string;
   clinicRole: ClinicRole;
   start: string;
   description?: string;
+  symptomReportId?: string;
 }): Promise<Appointment> {
+  assertReceptionOrAdmin();
   const created = await createAppointment(args);
+  if (args.symptomReportId?.trim()) {
+    await acknowledgeReturningSymptomReport(args.symptomReportId.trim());
+  }
   revalidateScheduling();
+  revalidatePath('/kiosk');
   return created;
+}
+
+/** Kiosk symptom alert — doctor follow-up on today's doctor queue (no clinical chart access). */
+export async function scheduleKioskSymptomDoctorFollowUp(args: {
+  reportId: string;
+  patientId: string;
+  patientName: string;
+}): Promise<Appointment> {
+  assertReceptionOrAdmin();
+
+  const reportId = args.reportId.trim();
+  const patientId = args.patientId.trim();
+  if (!reportId || !patientId) {
+    throw new Error('Missing symptom alert or patient.');
+  }
+
+  const existingDoctorQueueId = await findActiveDoctorAppointmentForPatient(patientId);
+  if (existingDoctorQueueId) {
+    await acknowledgeReturningSymptomReport(reportId);
+    revalidateScheduling();
+    revalidatePath('/kiosk');
+    const rows = await listAppointmentsForDay(todayDateParam());
+    const row = rows.find(r => r.appointment.id === existingDoctorQueueId);
+    if (row?.appointment) return row.appointment;
+    throw new Error('Patient is already on the doctor queue today.');
+  }
+
+  const rows = await listAppointmentsForDay(todayDateParam());
+  const scheduledDoctor = rows.find(
+    r =>
+      r.patientId === patientId
+      && r.clinicRole === 'doctor'
+      && r.workflow === 'scheduled'
+      && r.appointment.status !== 'noshow'
+      && r.appointment.status !== 'fulfilled',
+  );
+
+  let appointment: Appointment;
+  if (scheduledDoctor?.appointment.id) {
+    appointment = await advanceVisitWorkflow(
+      scheduledDoctor.appointment.id,
+      'ready-for-doctor',
+      'arrived',
+    );
+  } else {
+    appointment = await createAppointment({
+      patientId,
+      patientName: args.patientName,
+      clinicRole: 'doctor',
+      start: new Date().toISOString(),
+      description: 'Kiosk symptom check — doctor follow-up',
+      workflow: 'ready-for-doctor',
+      status: 'arrived',
+    });
+  }
+
+  await acknowledgeReturningSymptomReport(reportId);
+  revalidateScheduling();
+  revalidatePath('/kiosk');
+  return appointment;
 }
 
 export async function setAppointmentStatus(
@@ -69,9 +143,6 @@ export async function completeNurseVisit(args: {
   let appointmentId = args.appointmentId?.trim();
   if (!appointmentId) {
     appointmentId = await findActiveNurseAppointmentForPatient(args.patientId);
-  }
-  if (!appointmentId) {
-    appointmentId = await findAnyActiveAppointmentForPatient(args.patientId);
   }
   if (!appointmentId) {
     throw new Error(

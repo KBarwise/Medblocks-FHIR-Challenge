@@ -32,7 +32,7 @@ export function patientDestination(role: ActingRole, patientId: string): string 
     case 'nurse':
       return `/patient/${patientId}`;
     case 'doctor':
-      return `/patient/${patientId}/consult/document`;
+      return `/patient/${patientId}`;
     case 'reception':
     case 'admin':
       return `/register/${patientId}`;
@@ -40,11 +40,17 @@ export function patientDestination(role: ActingRole, patientId: string): string 
 }
 
 /** Reception desk — book appointment with patient pre-selected. */
-export function receptionBookPatientUrl(patientId: string, patientName: string): string {
+export function receptionBookPatientUrl(
+  patientId: string,
+  patientName: string,
+  options?: { clinicRole?: 'nurse' | 'doctor'; symptomReportId?: string },
+): string {
   const q = new URLSearchParams({
     patientId,
     patientName,
   });
+  if (options?.clinicRole) q.set('clinicRole', options.clinicRole);
+  if (options?.symptomReportId) q.set('symptomReportId', options.symptomReportId);
   return `/reception/book?${q.toString()}`;
 }
 

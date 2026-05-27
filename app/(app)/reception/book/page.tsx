@@ -10,7 +10,13 @@ export const dynamic = 'force-dynamic';
 export default async function BookAppointmentPage({
   searchParams,
 }: {
-  searchParams: { date?: string; patientId?: string; patientName?: string };
+  searchParams: {
+    date?: string;
+    patientId?: string;
+    patientName?: string;
+    clinicRole?: string;
+    symptomReportId?: string;
+  };
 }) {
   const date = searchParams.date ?? todayDateParam();
   const bookPatientId = searchParams.patientId?.trim();
@@ -19,6 +25,11 @@ export default async function BookAppointmentPage({
     bookPatientId && bookPatientName
       ? { id: bookPatientId, name: bookPatientName }
       : undefined;
+  const initialClinicRole =
+    searchParams.clinicRole === 'doctor' || searchParams.clinicRole === 'nurse'
+      ? searchParams.clinicRole
+      : undefined;
+  const symptomReportId = searchParams.symptomReportId?.trim() || undefined;
 
   const rows = await listAppointmentsForDay(date);
   const scheduledToday = rows.filter(
@@ -48,7 +59,9 @@ export default async function BookAppointmentPage({
         <BookAppointmentForm
           defaultDate={date}
           initialPatient={initialBookPatient}
-          afterBookPath="/reception"
+          initialClinicRole={initialClinicRole}
+          symptomReportId={symptomReportId}
+          afterBookPath="/reception/book"
         />
       </Card>
 
