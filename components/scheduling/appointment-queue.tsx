@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import { Badge } from '@/components/ui/primitives';
 import { formatTime } from '@/lib/clinical/scheduling';
 import { WORKFLOW_LABELS, type VisitWorkflow } from '@/lib/clinical/workflow';
@@ -64,24 +64,14 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
   const router = useRouter();
   const patientHref = row.patientId ? patientDestination(deskRole, row.patientId) : null;
   const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
   const a = row.appointment;
   const id = a.id!;
   const wf = row.workflow;
 
-  function run(fn: () => Promise<unknown>, navigateTo?: string) {
-    setError(null);
+  function run(fn: () => Promise<unknown>) {
     startTransition(async () => {
-      try {
-        await fn();
-        if (navigateTo) {
-          router.push(navigateTo);
-        } else {
-          router.refresh();
-        }
-      } catch (err) {
-        setError((err as Error).message);
-      }
+      await fn();
+      router.refresh();
     });
   }
 
@@ -112,9 +102,6 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
         <Badge tone={workflowTone(wf)}>{WORKFLOW_LABELS[wf]}</Badge>
       </td>
       <td className="py-2.5 text-right space-x-1 whitespace-nowrap">
-        {error && (
-          <p className="text-danger text-[11px] mb-1">{error}</p>
-        )}
         {deskRole === 'reception' && (
           <>
             {a.status === 'booked' && wf === 'scheduled' && (
@@ -140,7 +127,10 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
               <ActionBtn
                 disabled={pending}
                 onClick={() =>
-                  run(() => advanceVisitWorkflow(id, 'nurse-in-progress', 'arrived'), nurseDocHref)
+                  run(async () => {
+                    await advanceVisitWorkflow(id, 'nurse-in-progress', 'arrived');
+                    router.push(nurseDocHref);
+                  })
                 }
               >
                 Start
@@ -164,13 +154,12 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
               <ActionBtn
                 disabled={pending}
                 onClick={() =>
-                  run(
-                    () =>
-                      wf === 'ready-for-doctor'
-                        ? advanceVisitWorkflow(id, 'doctor-in-progress', 'arrived')
-                        : Promise.resolve(),
-                    doctorChartHref,
-                  )
+                  run(async () => {
+                    if (wf === 'ready-for-doctor') {
+                      await advanceVisitWorkflow(id, 'doctor-in-progress', 'arrived');
+                    }
+                    router.push(doctorChartHref);
+                  })
                 }
               >
                 Start
