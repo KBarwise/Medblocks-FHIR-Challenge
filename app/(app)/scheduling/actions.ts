@@ -28,6 +28,13 @@ export async function bookAppointment(args: {
   start: string;
   description?: string;
 }): Promise<Appointment> {
+  const normalizedStart = new Date(args.start).toISOString();
+  const appointmentDate = normalizedStart.slice(0, 10);
+  const existing = await findAnyActiveAppointmentForPatient(args.patientId, appointmentDate);
+  if (existing) {
+    throw new Error('This patient is already on the appointment board for that day.');
+  }
+
   const created = await createAppointment(args);
   revalidateScheduling();
   return created;
@@ -69,9 +76,6 @@ export async function completeNurseVisit(args: {
   let appointmentId = args.appointmentId?.trim();
   if (!appointmentId) {
     appointmentId = await findActiveNurseAppointmentForPatient(args.patientId);
-  }
-  if (!appointmentId) {
-    appointmentId = await findAnyActiveAppointmentForPatient(args.patientId);
   }
   if (!appointmentId) {
     throw new Error(
