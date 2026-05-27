@@ -72,7 +72,11 @@ export async function createPatient(
   return created;
 }
 
-export async function updatePatient(id: string, form: PatientFormData): Promise<Patient> {
+export async function updatePatient(
+  id: string,
+  form: PatientFormData,
+  kioskIntakeId?: string,
+): Promise<Patient> {
   assertCanEditDemographics(getActingRoleFromCookie());
   const err = await validatePatientFormForSave(form, id);
   if (err) throw new Error(err);
@@ -80,7 +84,12 @@ export async function updatePatient(id: string, form: PatientFormData): Promise<
   const existing = await fhir.read<Patient>('Patient', id);
   const resource = buildUsCorePatient(form, existing);
   const updated = await fhir.update<Patient>('Patient', id, resource);
+  if (kioskIntakeId) {
+    await completeKioskIntakeRegistration(kioskIntakeId, id);
+  }
   revalidatePath('/cohort');
+  revalidatePath('/register');
+  revalidatePath('/reception');
   revalidatePath(`/register/${id}`);
   revalidatePath(`/patient/${id}`);
   return updated;

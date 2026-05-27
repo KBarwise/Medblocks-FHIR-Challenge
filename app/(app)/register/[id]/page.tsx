@@ -10,7 +10,13 @@ import { PatientForm } from '../patient-form';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EditPatientPage({ params }: { params: { id: string } }) {
+export default async function EditPatientPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { intake?: string };
+}) {
   let patient: Patient | null = null;
   try {
     patient = await fhir.read<Patient>('Patient', params.id);
@@ -31,7 +37,11 @@ export default async function EditPatientPage({ params }: { params: { id: string
       </div>
       <Card>
         <CardTitle icon={<UserPen className="h-4 w-4" />}>Demographics & US Core identity</CardTitle>
-        <PatientForm patientId={params.id} initial={initial} />
+        <PatientForm
+          patientId={params.id}
+          initial={initial}
+          intakeId={searchParams.intake}
+        />
       </Card>
       <p className="text-[12px] text-ink-500 mt-3">
         <Link href="/register" className="text-info hover:underline">

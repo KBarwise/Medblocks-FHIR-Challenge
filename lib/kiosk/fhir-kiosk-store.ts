@@ -1,6 +1,7 @@
 import { fhir } from '@/lib/fhir/client';
-import type { Basic, Bundle } from '@/lib/fhir/resources';
-import type { KioskIntakeLead } from './intake-types';
+import { findPatientByNameAndDob, searchPatients } from '@/lib/fhir/patient-search';
+import type { Basic, Bundle, Patient } from '@/lib/fhir/resources';
+import { birthDateFromAge, type KioskIntakeLead } from './intake-types';
 import {
   KIOSK_PAYLOAD_URL,
   KIOSK_RECORD_ID_SYSTEM,
@@ -100,13 +101,58 @@ export async function fhirGetKioskIntakeLead(id: string): Promise<KioskIntakeLea
   return payloadFromBasic<KioskIntakeLead>(basic);
 }
 
+function normalizeNamePart(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function patientMatchesKioskLead(patient: Patient, lead: KioskIntakeLead): boolean {
+  const given = patient.name?.[0]?.given?.[0] ?? '';
+  const family = patient.name?.[0]?.family ?? '';
+  return (
+    normalizeNamePart(given) === normalizeNamePart(lead.demographics.given)
+    && normalizeNamePart(family) === normalizeNamePart(lead.demographics.family)
+  );
+}
+
+async function findRegisteredPatientForKioskLead(lead: KioskIntakeLead): Promise<Patient | null> {
+  const byDob = await findPatientByNameAndDob(
+    lead.demographics.given,
+    lead.demographics.family,
+    birthDateFromAge(lead.demographics.age),
+  );
+  if (byDob?.id) return byDob;
+
+  const candidates = await searchPatients(
+    `${lead.demographics.given} ${lead.demographics.family}`,
+    15,
+  );
+  const matches = candidates.filter(p => patientMatchesKioskLead(p, lead));
+  if (matches.length === 1) return matches[0]!;
+  return null;
+}
+
+/** If a pending kiosk lead already has a matching Patient, mark it registered. */
+async function reconcileKioskLeadIfRegistered(lead: KioskIntakeLead): Promise<boolean> {
+  const patient = await findRegisteredPatientForKioskLead(lead);
+  if (!patient?.id) return false;
+  await fhirMarkKioskIntakeRegistered(lead.id, patient.id);
+  return true;
+}
+
 export async function fhirListPendingKioskIntakes(): Promise<KioskIntakeLead[]> {
   const basics = await listBasicsByRecordType(KIOSK_RECORD_TYPE.intake);
-  return basics
+  const leads = basics
     .map(b => payloadFromBasic<KioskIntakeLead>(b))
     .filter((l): l is KioskIntakeLead => Boolean(l))
-    .filter(l => l.status === 'pending-registration')
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    .filter(l => l.status === 'pending-registration' && !l.registeredPatientId);
+
+  const stillPending: KioskIntakeLead[] = [];
+  for (const lead of leads) {
+    const reconciled = await reconcileKioskLeadIfRegistered(lead);
+    if (!reconciled) stillPending.push(lead);
+  }
+
+  return stillPending.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function fhirMarkKioskIntakeRegistered(
