@@ -18,7 +18,7 @@ export const NAV_BY_ROLE: Record<ActingRole, NavItem[]> = {
     { href: '/reception', label: 'Reception desk' },
     { href: '/patients', label: 'Find patient' },
     { href: '/register', label: 'Register' },
-    { href: '/reception/book', label: 'Book Appointment' },
+    { href: '/reception/book', label: 'Book appointment' },
     { href: '/mdm', label: 'Patient Merge' },
   ],
   nurse: [
@@ -26,6 +26,7 @@ export const NAV_BY_ROLE: Record<ActingRole, NavItem[]> = {
   ],
   doctor: [
     { href: '/clinic/doctor', label: "Doctor's Queue" },
+    { href: '/clinic/doctor/risk', label: 'Risk dashboard' },
   ],
   patient: [
     { href: '/kiosk', label: 'Pre-screening Kiosk' },
