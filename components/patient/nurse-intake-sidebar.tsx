@@ -172,33 +172,6 @@ function VitalSignsSection({
   );
 }
 
-function IntakeSection({
-  title,
-  trendsSection,
-  rows,
-  emptyLabel,
-}: {
-  title: string;
-  trendsSection: string;
-  rows: NurseIntakeRow[];
-  emptyLabel: string;
-}) {
-  return (
-    <div>
-      <SectionHeader title={title} trendsSection={trendsSection} />
-      {rows.length === 0 ? (
-        <p className="text-[12px] text-ink-500 py-1">{emptyLabel}</p>
-      ) : (
-        <div>
-          {rows.map(row => (
-            <IntakeRow key={row.label} row={row} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function NurseIntakeSidebar({
   observations,
 }: {
@@ -214,6 +187,14 @@ export function NurseIntakeSidebar({
     [summary.vitals],
   );
   const hasAbnormalVitals = summary.vitals.some(isAbnormalIntakeRow);
+  const pocAbnormal = useMemo(
+    () => summary.poc.filter(isAbnormalIntakeRow),
+    [summary.poc],
+  );
+  const pocNormal = useMemo(
+    () => summary.poc.filter(row => !isAbnormalIntakeRow(row)),
+    [summary.poc],
+  );
 
   return (
     <Card>
@@ -236,12 +217,29 @@ export function NurseIntakeSidebar({
             emptyLabel="No height or waist circumference recorded"
             trendsSection="anthropometrics-trends"
           />
-          <IntakeSection
-            title="Point-of-care tests"
-            trendsSection="laboratory-trends"
-            rows={summary.poc}
-            emptyLabel="No POC tests recorded"
-          />
+          <div>
+            <SectionHeader title="Point-of-care tests" trendsSection="laboratory-trends" />
+            {summary.poc.length === 0 ? (
+              <p className="text-[12px] text-ink-500 py-1">No POC tests recorded</p>
+            ) : (
+              <div className="space-y-2">
+                {pocAbnormal.length > 0 && (
+                  <div>
+                    {pocAbnormal.map(row => (
+                      <IntakeRow key={row.label} row={row} prominent />
+                    ))}
+                  </div>
+                )}
+                {pocNormal.length > 0 && (
+                  <CollapsibleIntakeRows
+                    title={`Normal point-of-care tests (${pocNormal.length})`}
+                    rows={pocNormal}
+                    emptyLabel="None"
+                  />
+                )}
+              </div>
+            )}
+          </div>
           {summary.nursingNote && (
             <div>
               <h4 className="text-[12px] font-medium text-ink-600 mb-1.5">Nursing note</h4>
