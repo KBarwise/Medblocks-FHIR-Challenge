@@ -3,6 +3,7 @@ import { Card, CardTitle } from '@/components/ui/primitives';
 import { conditionsForPrescriptionScreening } from '@/lib/clinical/screening-conditions';
 import { activeMedicationSnomedCodes } from '@/lib/clinical/medications';
 import { getIncretinPrescribingBlocks } from '@/lib/clinical/incretin-prescribing-guards';
+import { resolveWeightManagementPathway } from '@/lib/clinical/weight-management-pathway';
 import { loadPatientContext } from '@/lib/patient/load-patient-context';
 import { evaluatePrescriptionScreening } from '@/lib/screening/evaluate-prescription';
 import { ConsultChart } from '../consult-chart';
@@ -23,10 +24,12 @@ export default async function ConsultDocumentPage({
   const screening = await evaluatePrescriptionScreening(
     conditionsForPrescriptionScreening([...ctx.problemList, ...ctx.disorders]),
   );
+  const weightPathway = await resolveWeightManagementPathway(ctx.patient, params.id);
   const incretinBlock = getIncretinPrescribingBlocks({
     observations: ctx.observations,
     signals: ctx.signals,
     screening,
+    weightPathway,
   });
 
   return (

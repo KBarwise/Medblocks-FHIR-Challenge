@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation';
 import { Card, CardTitle } from '@/components/ui/primitives';
 import { Pill } from 'lucide-react';
 import { getIncretinPrescribingBlocks } from '@/lib/clinical/incretin-prescribing-guards';
+import { conditionsForPrescriptionScreening } from '@/lib/clinical/screening-conditions';
+import { resolveWeightManagementPathway } from '@/lib/clinical/weight-management-pathway';
+import { evaluatePrescriptionScreening } from '@/lib/screening/evaluate-prescription';
 import { loadPatientContext } from '@/lib/patient/load-patient-context';
 import { PrescribeForm } from './prescribe-form';
 
@@ -11,9 +14,15 @@ export default async function PrescribePage({ params }: { params: { patientId: s
   const ctx = await loadPatientContext(params.patientId);
   if (!ctx.patient) notFound();
 
+  const screening = await evaluatePrescriptionScreening(
+    conditionsForPrescriptionScreening([...ctx.problemList, ...ctx.disorders]),
+  );
+  const weightPathway = await resolveWeightManagementPathway(ctx.patient, params.patientId);
   const incretinBlock = getIncretinPrescribingBlocks({
     observations: ctx.observations,
     signals: ctx.signals,
+    screening,
+    weightPathway,
   });
 
   return (

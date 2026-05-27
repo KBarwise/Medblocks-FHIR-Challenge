@@ -1,4 +1,6 @@
 import { HEADER_LABS } from './lab-catalog';
+import { dietExercisePathwayBlockReason } from './weight-management-pathway';
+import type { KioskIntakePathway } from '@/lib/kiosk/intake-types';
 import type { ScreeningEvaluation } from '@/lib/screening/evaluate-prescription';
 import type { Observation } from '@/lib/fhir/resources';
 import { evaluateSignals, type SafetySignal } from '@/lib/signals/rules';
@@ -35,12 +37,16 @@ export function getIncretinPrescribingBlocks(args: {
   observations: Observation[];
   signals?: SafetySignal[];
   screening?: ScreeningEvaluation;
+  weightPathway?: KioskIntakePathway | null;
 }): IncretinPrescribingBlock {
   const signals = args.signals ?? evaluateSignals({
     observations: args.observations,
     conditions: [],
   });
   const reasons: string[] = [];
+
+  const pathwayReason = dietExercisePathwayBlockReason(args.weightPathway ?? null);
+  if (pathwayReason) reasons.push(pathwayReason);
 
   const lipaseReason = lipasePrescribingBlockReason(args.observations);
   if (lipaseReason) reasons.push(lipaseReason);
@@ -75,6 +81,7 @@ export function assertIncretinPrescribingAllowed(args: {
   observations: Observation[];
   signals?: SafetySignal[];
   screening?: ScreeningEvaluation;
+  weightPathway?: KioskIntakePathway | null;
 }): void {
   const { blocked, reasons } = getIncretinPrescribingBlocks(args);
   if (blocked) {

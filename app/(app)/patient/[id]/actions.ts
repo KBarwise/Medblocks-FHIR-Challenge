@@ -21,6 +21,8 @@ import { activeProblemSnomedCodes } from '@/lib/clinical/conditions';
 import { filterDisorderConditions } from '@/lib/clinical/conditions-server';
 import { conditionsForPrescriptionScreening } from '@/lib/clinical/screening-conditions';
 import { assertIncretinPrescribingAllowed } from '@/lib/clinical/incretin-prescribing-guards';
+import { resolveWeightManagementPathway } from '@/lib/clinical/weight-management-pathway';
+import { loadPatientContext } from '@/lib/patient/load-patient-context';
 import { evaluatePrescriptionScreening } from '@/lib/screening/evaluate-prescription';
 import type { ConsultDiagnosis } from '@/lib/clinical/diagnosis-qualifiers';
 import { getCatalogMedication } from '@/lib/clinical/medication-catalog';
@@ -373,17 +375,15 @@ export async function submitConsultation(args: {
     conditionsForPrescriptionScreening(allConditions),
   );
 
-  const obsBundle = await fhir.search<Bundle<Observation>>('Observation', {
-    patient: args.patientId,
-    _count: 200,
-    _sort: '-date',
-  }).catch(() => ({ resourceType: 'Bundle' as const, type: 'searchset' as const, entry: [] }));
-  const observations = (obsBundle.entry ?? [])
-    .map(e => e.resource)
-    .filter((r): r is Observation => r?.resourceType === 'Observation');
-
   if (args.prescribeIncretin) {
-    assertIncretinPrescribingAllowed({ observations, screening: prescriptionScreening });
+    const ctx = await loadPatientContext(args.patientId);
+    const weightPathway = await resolveWeightManagementPathway(ctx.patient, args.patientId);
+    assertIncretinPrescribingAllowed({
+      observations: ctx.observations,
+      signals: ctx.signals,
+      screening: prescriptionScreening,
+      weightPathway,
+    });
   }
 
   const medBundle = await fhir.search<Bundle<MedicationRequest>>('MedicationRequest', {
