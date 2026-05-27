@@ -11,10 +11,14 @@ type PatientHit = { id: string; name: string; mrn?: string };
 export function BookAppointmentForm({
   defaultDate,
   initialPatient,
+  initialClinicRole,
+  symptomReportId,
   afterBookPath = '/reception/book',
 }: {
   defaultDate: string;
   initialPatient?: PatientHit;
+  initialClinicRole?: ClinicRole;
+  symptomReportId?: string;
   /** Path to return to after a successful booking (date query appended). */
   afterBookPath?: string;
 }) {
@@ -23,7 +27,7 @@ export function BookAppointmentForm({
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<PatientHit[]>([]);
   const [selected, setSelected] = useState<PatientHit | null>(initialPatient ?? null);
-  const [clinicRole, setClinicRole] = useState<ClinicRole>('nurse');
+  const [clinicRole, setClinicRole] = useState<ClinicRole>(initialClinicRole ?? 'nurse');
   const [start, setStart] = useState(`${defaultDate}T09:00`);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,6 +37,10 @@ export function BookAppointmentForm({
     setQuery('');
     setHits([]);
   }, [initialPatient?.id, initialPatient?.name]);
+
+  useEffect(() => {
+    if (initialClinicRole) setClinicRole(initialClinicRole);
+  }, [initialClinicRole]);
 
   async function searchPatients(q: string) {
     if (q.trim().length < 2) {
@@ -58,6 +66,7 @@ export function BookAppointmentForm({
           patientName: selected.name,
           clinicRole,
           start: new Date(start).toISOString(),
+          symptomReportId,
         });
         setQuery('');
         setSelected(null);

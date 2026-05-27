@@ -5,6 +5,7 @@ import { activeMedicationSnomedCodes } from '@/lib/clinical/medications';
 import { loadPatientContext } from '@/lib/patient/load-patient-context';
 import { evaluatePrescriptionScreening } from '@/lib/screening/evaluate-prescription';
 import { DoctorChartLayout } from '@/components/patient/doctor-chart-layout';
+import { DoctorConsultContext } from '@/components/patient/doctor-consult-context';
 import { ConsultChart } from '../consult-chart';
 import { ClipboardList } from 'lucide-react';
 
@@ -25,7 +26,8 @@ export default async function ConsultDocumentPage({
   );
 
   return (
-    <DoctorChartLayout patientId={params.id} observations={ctx.observations}>
+    <DoctorChartLayout observations={ctx.observations}>
+      <DoctorConsultContext patientId={params.id} ctx={ctx} />
       <Card>
         <CardTitle icon={<ClipboardList className="h-4 w-4" />}>Consultation documentation</CardTitle>
         <p className="text-[12px] text-ink-500 mb-4">
@@ -36,7 +38,6 @@ export default async function ConsultDocumentPage({
           key={params.id}
           patientId={params.id}
           appointmentId={searchParams.appointment?.trim() || undefined}
-          chartBackHref={`/patient/${params.id}`}
           existingMedicationCodes={[...activeMedicationSnomedCodes(ctx.medications)]}
           screening={screening}
         />

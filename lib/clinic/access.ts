@@ -40,11 +40,17 @@ export function patientDestination(role: ActingRole, patientId: string): string 
 }
 
 /** Reception desk — book appointment with patient pre-selected. */
-export function receptionBookPatientUrl(patientId: string, patientName: string): string {
+export function receptionBookPatientUrl(
+  patientId: string,
+  patientName: string,
+  options?: { clinicRole?: 'nurse' | 'doctor'; symptomReportId?: string },
+): string {
   const q = new URLSearchParams({
     patientId,
     patientName,
   });
+  if (options?.clinicRole) q.set('clinicRole', options.clinicRole);
+  if (options?.symptomReportId) q.set('symptomReportId', options.symptomReportId);
   return `/reception/book?${q.toString()}`;
 }
 
@@ -85,10 +91,6 @@ export function roleAllowsPath(role: ActingRole, pathname: string): boolean {
 
   if (pathname.startsWith('/patients')) {
     return role === 'reception' || role === 'admin';
-  }
-
-  if (pathname.match(/^\/patient\/[^/]+\/trends/)) {
-    return role === 'nurse' || role === 'doctor';
   }
 
   if (pathname.match(/^\/patient\/[^/]+\/nurse/)) {

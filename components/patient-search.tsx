@@ -26,6 +26,7 @@ export function PatientSearch({
 }) {
   const router = useRouter();
   const { role } = useClinic();
+  const isReceptionDesk = role === 'reception' || role === 'admin';
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [open, setOpen] = useState(false);
@@ -62,6 +63,7 @@ export function PatientSearch({
   }, []);
 
   function selectPatient(id: string) {
+    if (isReceptionDesk) return;
     setOpen(false);
     setQuery('');
     router.push(patientDestination(role, id));
@@ -106,29 +108,52 @@ export function PatientSearch({
               key={h.id}
               className="flex items-stretch border-b border-ink-100 last:border-b-0"
             >
-              <button
-                type="button"
-                onClick={() => selectPatient(h.id)}
-                className="flex-1 min-w-0 text-left px-3 py-2 hover:bg-ink-50"
-              >
-                <div className="text-[13px] font-medium truncate">{h.name}</div>
-                <div className="text-[11px] text-ink-500">
-                  {h.mrn && <>MRN {h.mrn} · </>}
-                  {h.gender ?? '?'} · {h.age ?? '?'}y
+              {isReceptionDesk ? (
+                <div className="flex-1 min-w-0 px-3 py-2">
+                  <div className="text-[13px] font-medium truncate">{h.name}</div>
+                  <div className="text-[11px] text-ink-500">
+                    {h.mrn && <>MRN {h.mrn} · </>}
+                    {h.gender ?? '?'} · {h.age ?? '?'}y
+                  </div>
                 </div>
-              </button>
-              {role === 'reception' && (
+              ) : (
                 <button
                   type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    setQuery('');
-                    router.push(receptionBookPatientUrl(h.id, h.name));
-                  }}
-                  className="shrink-0 px-2.5 py-2 text-[11px] font-medium text-accent border-l border-ink-100 hover:bg-ink-50"
+                  onClick={() => selectPatient(h.id)}
+                  className="flex-1 min-w-0 text-left px-3 py-2 hover:bg-ink-50"
                 >
-                  Book
+                  <div className="text-[13px] font-medium truncate">{h.name}</div>
+                  <div className="text-[11px] text-ink-500">
+                    {h.mrn && <>MRN {h.mrn} · </>}
+                    {h.gender ?? '?'} · {h.age ?? '?'}y
+                  </div>
                 </button>
+              )}
+              {isReceptionDesk && (
+                <div className="shrink-0 flex flex-col justify-center gap-0.5 border-l border-ink-100 px-2 py-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      setQuery('');
+                      router.push(`/register/${h.id}`);
+                    }}
+                    className="text-[11px] text-ink-600 hover:text-ink-900 text-left whitespace-nowrap"
+                  >
+                    Edit demographics
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      setQuery('');
+                      router.push(receptionBookPatientUrl(h.id, h.name));
+                    }}
+                    className="text-[11px] font-medium text-accent text-left whitespace-nowrap"
+                  >
+                    Book appointment
+                  </button>
+                </div>
               )}
             </div>
           ))}

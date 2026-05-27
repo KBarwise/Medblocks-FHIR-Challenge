@@ -3,18 +3,16 @@ import type { Observation } from '@/lib/fhir/resources';
 
 /** Doctor consultation layout: nurse intake on the left, chart content on the right. */
 export function DoctorChartLayout({
-  patientId,
   observations,
   children,
 }: {
-  patientId: string;
   observations: Observation[];
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(260px,300px)_1fr] lg:items-start">
-      <aside className="min-w-0">
-        <NurseIntakeSidebar patientId={patientId} observations={observations} />
+    <div className="grid gap-4 xl:gap-5 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)] items-start">
+      <aside className="min-w-0 lg:sticky lg:top-44 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
+        <NurseIntakeSidebar observations={observations} />
       </aside>
       <div className="min-w-0 space-y-4">{children}</div>
     </div>

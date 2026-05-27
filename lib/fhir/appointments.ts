@@ -153,6 +153,8 @@ export async function createAppointment(args: {
   clinicRole: ClinicRole;
   start: string;
   description?: string;
+  workflow?: VisitWorkflow;
+  status?: Appointment['status'];
 }): Promise<Appointment> {
   const normalizedStart = new Date(args.start).toISOString();
   const date = localDateParamFromIso(normalizedStart);
@@ -172,7 +174,8 @@ export async function createAppointment(args: {
     throw new Error('This patient already has an active appointment on the board for this day.');
   }
 
-  const resource = buildAppointment({ ...args, start: normalizedStart });
+  let resource = buildAppointment({ ...args, start: normalizedStart });
+  if (args.status) resource = { ...resource, status: args.status };
   return fhir.create<Appointment>('Appointment', resource);
 }
 
