@@ -24,7 +24,11 @@ export default async function PatientLayout({
     <div className="min-h-full">
       <div className="sticky top-0 z-30 bg-[var(--bg)]/95 backdrop-blur-sm border-b border-ink-100 shadow-sm">
         <div className="h-1 bg-accent" aria-hidden />
-        <div className="mx-auto max-w-5xl px-6 pt-4 pb-3 space-y-0">
+        <div
+          className={`mx-auto px-6 pt-4 pb-3 space-y-0 ${
+            showClinicalHeader ? "max-w-7xl" : "max-w-5xl"
+          }`}
+        >
           {showClinicalHeader && (
             <PatientHeader
               patient={ctx.patient}
@@ -39,7 +43,7 @@ export default async function PatientLayout({
           <PatientNav patientId={params.id} embedded />
         </div>
       </div>
-      <div className="mx-auto max-w-5xl px-6 py-4">{children}</div>
+      <div className={`mx-auto px-6 py-4 ${showClinicalHeader ? 'max-w-7xl' : 'max-w-5xl'}`}>{children}</div>
     </div>
   );
 }

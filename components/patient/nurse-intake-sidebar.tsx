@@ -9,7 +9,8 @@ import type { Observation } from '@/lib/fhir/resources';
 import { Activity, LineChart } from 'lucide-react';
 
 function trendsHref(patientId: string, section: string): string {
-  return `/patient/${patientId}/trends#${section}`;
+  const q = new URLSearchParams({ trends: section });
+  return `/patient/${patientId}/consult/document?${q.toString()}`;
 }
 
 function SectionHeader({

@@ -6,6 +6,7 @@ import { loadPatientContext } from '@/lib/patient/load-patient-context';
 import { evaluatePrescriptionScreening } from '@/lib/screening/evaluate-prescription';
 import { DoctorChartLayout } from '@/components/patient/doctor-chart-layout';
 import { ConsultChart } from '../consult-chart';
+import { DoctorTrendsOverlay } from '@/components/patient/doctor-trends-overlay';
 import { ClipboardList } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,7 @@ export default async function ConsultDocumentPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { appointment?: string };
+  searchParams: { appointment?: string; trends?: string };
 }) {
   const ctx = await loadPatientContext(params.id);
   if (!ctx.patient) notFound();
@@ -25,8 +26,10 @@ export default async function ConsultDocumentPage({
   );
 
   return (
-    <DoctorChartLayout patientId={params.id} observations={ctx.observations}>
-      <Card>
+    <>
+      <DoctorTrendsOverlay patientId={params.id} />
+      <DoctorChartLayout patientId={params.id} observations={ctx.observations}>
+        <Card>
         <CardTitle icon={<ClipboardList className="h-4 w-4" />}>Consultation documentation</CardTitle>
         <p className="text-[12px] text-ink-500 mb-4">
           Use the tabs to document the visit. Completing sends the patient to reception for checkout;
@@ -40,7 +43,8 @@ export default async function ConsultDocumentPage({
           existingMedicationCodes={[...activeMedicationSnomedCodes(ctx.medications)]}
           screening={screening}
         />
-      </Card>
-    </DoctorChartLayout>
+        </Card>
+      </DoctorChartLayout>
+    </>
   );
 }
