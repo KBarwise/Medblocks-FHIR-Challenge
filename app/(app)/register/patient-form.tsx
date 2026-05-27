@@ -205,7 +205,8 @@ export function PatientForm({
         setLastSavedAt(new Date());
         setAutosaveStatus('saved');
         if (saved.created) {
-          router.replace(`/register/${saved.id}`);
+          const intakeQuery = intakeId ? `?intake=${encodeURIComponent(intakeId)}` : '';
+          router.replace(`/register/${saved.id}${intakeQuery}`);
         }
       } catch (e) {
         const msg = (e as Error).message;
@@ -277,7 +278,7 @@ export function PatientForm({
     startTransition(async () => {
       try {
         if (effectiveId) {
-          const updated = await updatePatient(effectiveId, form, intakeId);
+          const updated = await updatePatient(effectiveId, form);
           lastPersistedRef.current = serializeForm(form);
           setLastSavedAt(new Date());
           setAutosaveStatus('saved');
