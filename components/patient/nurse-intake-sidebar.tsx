@@ -1,14 +1,17 @@
 'use client';
 
+import { useMemo, useState } from 'react';
+import { Activity, ChevronDown, ChevronRight } from 'lucide-react';
 import { Card, CardTitle } from '@/components/ui/primitives';
 import {
+  anthropometricsForDoctorSidebar,
   buildNurseIntakeSummary,
   nurseIntakeHasData,
   type NurseIntakeRow,
 } from '@/lib/clinical/nurse-intake-summary';
 import type { Observation } from '@/lib/fhir/resources';
-import { Activity } from 'lucide-react';
 import { TrendsOpenButton } from '@/components/patient/trends-open-button';
+import { cn } from '@/lib/utils';
 
 function SectionHeader({
   title,
@@ -96,6 +99,55 @@ function IntakeSection({
   );
 }
 
+function CollapsibleAnthropometricsSection({ rows }: { rows: NurseIntakeRow[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const summaryHint =
+    rows.length === 0
+      ? 'None recorded'
+      : rows.map(r => `${r.label}: ${r.value}${r.unit ? ` ${r.unit}` : ''}`).join(' · ');
+
+  return (
+    <div className="border border-ink-100 rounded-md overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded(v => !v)}
+        className="w-full flex items-start gap-2 px-2.5 py-2 text-left bg-ink-50/60 hover:bg-ink-50 transition-colors"
+        aria-expanded={expanded}
+      >
+        {expanded ? (
+          <ChevronDown className="h-4 w-4 text-ink-500 shrink-0 mt-0.5" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-ink-500 shrink-0 mt-0.5" />
+        )}
+        <span className="flex-1 min-w-0">
+          <span className="flex items-center justify-between gap-2">
+            <span className="text-[12px] font-medium text-ink-700">Anthropometrics</span>
+            <span className="shrink-0" onClick={e => e.stopPropagation()}>
+              <TrendsOpenButton section="anthropometrics-trends" />
+            </span>
+          </span>
+          {!expanded && (
+            <span className="block text-[11px] text-ink-500 truncate mt-0.5">{summaryHint}</span>
+          )}
+        </span>
+      </button>
+      {expanded && (
+        <div className={cn('px-2.5 pb-2 pt-1 border-t border-ink-100')}>
+          {rows.length === 0 ? (
+            <p className="text-[12px] text-ink-500 py-1">No height or waist circumference recorded</p>
+          ) : (
+            <div>
+              {rows.map(row => (
+                <IntakeRow key={row.label} row={row} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function NurseIntakeSidebar({
   patientId,
   observations,
@@ -104,6 +156,10 @@ export function NurseIntakeSidebar({
   observations: Observation[];
 }) {
   const summary = buildNurseIntakeSummary(observations);
+  const anthropometrics = useMemo(
+    () => anthropometricsForDoctorSidebar(summary.anthropometrics),
+    [summary.anthropometrics],
+  );
   const hasAbnormalVitals = summary.vitals.some(
     r => r.status === 'warning' || r.status === 'critical',
   );
@@ -129,13 +185,7 @@ export function NurseIntakeSidebar({
             rows={summary.vitals}
             emptyLabel="No vitals recorded"
           />
-          <IntakeSection
-            title="Anthropometrics"
-            trendsSection="anthropometrics-trends"
-            patientId={patientId}
-            rows={summary.anthropometrics}
-            emptyLabel="No height/weight/BMI"
-          />
+          <CollapsibleAnthropometricsSection rows={anthropometrics} />
           <IntakeSection
             title="Point-of-care tests"
             trendsSection="laboratory-trends"
