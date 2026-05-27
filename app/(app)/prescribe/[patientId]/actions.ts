@@ -1,8 +1,9 @@
 'use server';
 
 import { fhir } from '@/lib/fhir/client';
+import { assertIncretinPrescribingAllowed } from '@/lib/clinical/incretin-prescribing-guards';
 import { buildMedicationRequest } from '@/lib/fhir/builders';
-import type { MedicationRequest } from '@/lib/fhir/resources';
+import type { Bundle, MedicationRequest, Observation } from '@/lib/fhir/resources';
 
 export async function submitPrescription(args: {
   patientId: string;
@@ -11,6 +12,17 @@ export async function submitPrescription(args: {
   doseValue: number;
   doseUnit: string;
 }): Promise<MedicationRequest> {
+  const obsBundle = await fhir.search<Bundle<Observation>>('Observation', {
+    patient: args.patientId,
+    _count: 200,
+    _sort: '-date',
+  }).catch(() => ({ resourceType: 'Bundle' as const, type: 'searchset' as const, entry: [] }));
+  const observations = (obsBundle.entry ?? [])
+    .map(e => e.resource)
+    .filter((r): r is Observation => r?.resourceType === 'Observation');
+
+  assertIncretinPrescribingAllowed({ observations });
+
   const resource = buildMedicationRequest({
     patientId: args.patientId,
     medicationCode: { code: args.agentCode, display: args.agentDisplay },

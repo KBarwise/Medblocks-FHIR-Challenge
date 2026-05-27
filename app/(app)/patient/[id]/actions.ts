@@ -19,6 +19,9 @@ import { ANTHROPOMETRICS, LAB_PANELS, VITAL_SIGNS } from '@/lib/clinical/lab-cat
 import { URINALYSIS_POC } from '@/lib/clinical/urinalysis-poc';
 import { activeProblemSnomedCodes } from '@/lib/clinical/conditions';
 import { filterDisorderConditions } from '@/lib/clinical/conditions-server';
+import { conditionsForPrescriptionScreening } from '@/lib/clinical/screening-conditions';
+import { assertIncretinPrescribingAllowed } from '@/lib/clinical/incretin-prescribing-guards';
+import { evaluatePrescriptionScreening } from '@/lib/screening/evaluate-prescription';
 import type { ConsultDiagnosis } from '@/lib/clinical/diagnosis-qualifiers';
 import { getCatalogMedication } from '@/lib/clinical/medication-catalog';
 import type { ConsultMedication } from '@/lib/clinical/medication-qualifiers';
@@ -217,6 +220,15 @@ async function syncNurseMedications(
     }
 
     const rx = desiredByCode.get(code)!;
+    if (rx.changeType === 'stop') {
+      await fhir.update<MedicationRequest>('MedicationRequest', mr.id, {
+        ...mr,
+        status: 'stopped',
+        note: medicationQualifierNotes({ changeType: 'stop', priority: rx.priority }),
+      });
+      count += 1;
+      continue;
+    }
     if (!medicationNotesMatch(mr, rx)) {
       await fhir.update<MedicationRequest>('MedicationRequest', mr.id, {
         ...mr,
@@ -342,6 +354,7 @@ export async function submitConsultation(args: {
     priority: ConsultMedication['priority'];
   };
   medications?: ConsultMedication[];
+  medicationDiscontinuations?: string[];
   labPanels: string[];
 }): Promise<{ encounterId?: string; resources: number }> {
   assertClinicalWrite();
@@ -351,24 +364,51 @@ export async function submitConsultation(args: {
     patient: args.patientId,
     _count: 100,
   }).catch(() => ({ resourceType: 'Bundle' as const, type: 'searchset' as const, entry: [] }));
-  const existingProblems = activeProblemSnomedCodes(
-    await filterDisorderConditions(
-      (condBundle.entry ?? [])
-        .map(e => e.resource)
-        .filter((r): r is Condition => r?.resourceType === 'Condition'),
-    ),
+  const allConditions = (condBundle.entry ?? [])
+    .map(e => e.resource)
+    .filter((r): r is Condition => r?.resourceType === 'Condition');
+  const disorders = await filterDisorderConditions(allConditions);
+  const existingProblems = activeProblemSnomedCodes(disorders);
+  const prescriptionScreening = await evaluatePrescriptionScreening(
+    conditionsForPrescriptionScreening(allConditions),
   );
+
+  const obsBundle = await fhir.search<Bundle<Observation>>('Observation', {
+    patient: args.patientId,
+    _count: 200,
+    _sort: '-date',
+  }).catch(() => ({ resourceType: 'Bundle' as const, type: 'searchset' as const, entry: [] }));
+  const observations = (obsBundle.entry ?? [])
+    .map(e => e.resource)
+    .filter((r): r is Observation => r?.resourceType === 'Observation');
+
+  if (args.prescribeIncretin) {
+    assertIncretinPrescribingAllowed({ observations, screening: prescriptionScreening });
+  }
 
   const medBundle = await fhir.search<Bundle<MedicationRequest>>('MedicationRequest', {
     patient: args.patientId,
     status: 'active',
     _count: 100,
   }).catch(() => ({ resourceType: 'Bundle' as const, type: 'searchset' as const, entry: [] }));
-  const existingMedications = activeMedicationSnomedCodes(
-    (medBundle.entry ?? [])
-      .map(e => e.resource)
-      .filter((r): r is MedicationRequest => r?.resourceType === 'MedicationRequest'),
-  );
+  const activeMedResources = (medBundle.entry ?? [])
+    .map(e => e.resource)
+    .filter((r): r is MedicationRequest => r?.resourceType === 'MedicationRequest');
+
+  const existingMedications = activeMedicationSnomedCodes(activeMedResources);
+  const discontinueSet = new Set(args.medicationDiscontinuations ?? []);
+  for (const mr of activeMedResources) {
+    const code = medicationSnomedCode(mr);
+    if (!code || !mr.id || !discontinueSet.has(code)) continue;
+    await fhir.update<MedicationRequest>('MedicationRequest', mr.id, {
+      ...mr,
+      status: 'stopped',
+      note: medicationQualifierNotes({ changeType: 'stop', priority: 'routine' }),
+    });
+    count += 1;
+    existingMedications.delete(code);
+  }
+
   const encounter = await fhir.create('Encounter', buildEncounter({
     patientId: args.patientId,
     reason: args.reason,
@@ -405,7 +445,7 @@ export async function submitConsultation(args: {
 
   if (args.prescribeIncretin) {
     const agentCode = args.prescribeIncretin.agentCode;
-    if (!existingMedications.has(agentCode)) {
+    if (!discontinueSet.has(agentCode) && !existingMedications.has(agentCode)) {
       const agent = PRESCRIBE_AGENTS[agentCode] ?? { display: 'Incretin agent' };
       await fhir.create<MedicationRequest>('MedicationRequest', buildMedicationRequest({
         patientId: args.patientId,
@@ -427,6 +467,7 @@ export async function submitConsultation(args: {
 
   const orderedMedCodes = new Set<string>();
   for (const rx of args.medications ?? []) {
+    if (rx.changeType === 'stop') continue;
     if (orderedMedCodes.has(rx.code) || existingMedications.has(rx.code)) continue;
     const med = getCatalogMedication(rx.code);
     if (!med) continue;
