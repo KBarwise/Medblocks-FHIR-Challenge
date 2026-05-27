@@ -48,7 +48,7 @@ export default async function BookAppointmentPage({
         <BookAppointmentForm
           defaultDate={date}
           initialPatient={initialBookPatient}
-          afterBookPath="/reception/book"
+          afterBookPath="/reception"
         />
       </Card>
 
