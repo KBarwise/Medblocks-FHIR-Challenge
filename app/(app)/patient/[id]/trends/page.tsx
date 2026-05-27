@@ -22,5 +22,9 @@ export default async function PatientTrendsPage({
   }
 
   const tab = tabFromTrendsParam(searchParams?.tab ?? null);
-  redirect(`/patient/${params.id}?trends=1&tab=${tab}`);
+  const base =
+    role === 'doctor'
+      ? `/patient/${params.id}/consult/document`
+      : `/patient/${params.id}`;
+  redirect(`${base}?trends=1&tab=${tab}`);
 }

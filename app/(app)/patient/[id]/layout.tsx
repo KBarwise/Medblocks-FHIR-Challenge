@@ -44,7 +44,11 @@ export default async function PatientLayout({
           <PatientNav patientId={params.id} embedded />
         </div>
       </div>
-      <div className="mx-auto max-w-5xl px-6 py-4">
+      <div
+        className={`mx-auto px-6 py-4 ${
+          showClinicalHeader ? 'max-w-7xl' : 'max-w-5xl'
+        }`}
+      >
         <PatientChartShell patientId={params.id}>{children}</PatientChartShell>
       </div>
     </div>

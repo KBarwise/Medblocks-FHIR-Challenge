@@ -32,7 +32,7 @@ export function patientDestination(role: ActingRole, patientId: string): string 
     case 'nurse':
       return `/patient/${patientId}`;
     case 'doctor':
-      return `/patient/${patientId}`;
+      return `/patient/${patientId}/consult/document`;
     case 'reception':
     case 'admin':
       return `/register/${patientId}`;
@@ -85,10 +85,6 @@ export function roleAllowsPath(role: ActingRole, pathname: string): boolean {
 
   if (pathname.startsWith('/patients')) {
     return role === 'reception' || role === 'admin';
-  }
-
-  if (pathname.match(/^\/patient\/[^/]+\/trends/)) {
-    return role === 'nurse' || role === 'doctor';
   }
 
   if (pathname.match(/^\/patient\/[^/]+\/nurse/)) {

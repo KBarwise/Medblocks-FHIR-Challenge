@@ -6,7 +6,9 @@ import { Card, CardTitle } from '@/components/ui/primitives';
 import {
   anthropometricsForDoctorSidebar,
   buildNurseIntakeSummary,
+  isAbnormalIntakeRow,
   nurseIntakeHasData,
+  partitionVitalSignRows,
   type NurseIntakeRow,
 } from '@/lib/clinical/nurse-intake-summary';
 import type { Observation } from '@/lib/fhir/resources';
@@ -19,7 +21,6 @@ function SectionHeader({
 }: {
   title: string;
   trendsSection: string;
-  patientId: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -30,7 +31,7 @@ function SectionHeader({
 }
 
 function IntakeRow({ row, prominent }: { row: NurseIntakeRow; prominent?: boolean }) {
-  const abnormal = row.status === 'critical' || row.status === 'warning';
+  const abnormal = isAbnormalIntakeRow(row);
   return (
     <div
       className={`py-2 border-b border-ink-50 last:border-b-0 ${
@@ -70,41 +71,26 @@ function IntakeRow({ row, prominent }: { row: NurseIntakeRow; prominent?: boolea
   );
 }
 
-function IntakeSection({
-  title,
-  trendsSection,
-  patientId,
-  rows,
-  emptyLabel,
-}: {
-  title: string;
-  trendsSection: string;
-  patientId: string;
-  rows: NurseIntakeRow[];
-  emptyLabel: string;
-}) {
-  return (
-    <div>
-      <SectionHeader title={title} trendsSection={trendsSection} patientId={patientId} />
-      {rows.length === 0 ? (
-        <p className="text-[12px] text-ink-500 py-1">{emptyLabel}</p>
-      ) : (
-        <div>
-          {rows.map(row => (
-            <IntakeRow key={row.label} row={row} prominent={title === 'Vital signs'} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+function collapsibleSummary(rows: NurseIntakeRow[], emptyLabel: string): string {
+  if (rows.length === 0) return emptyLabel;
+  return rows.map(r => `${r.label}: ${r.value}${r.unit ? ` ${r.unit}` : ''}`).join(' · ');
 }
 
-function CollapsibleAnthropometricsSection({ rows }: { rows: NurseIntakeRow[] }) {
-  const [expanded, setExpanded] = useState(false);
-  const summaryHint =
-    rows.length === 0
-      ? 'None recorded'
-      : rows.map(r => `${r.label}: ${r.value}${r.unit ? ` ${r.unit}` : ''}`).join(' · ');
+function CollapsibleIntakeRows({
+  title,
+  rows,
+  emptyLabel,
+  trendsSection,
+  defaultExpanded = false,
+}: {
+  title: string;
+  rows: NurseIntakeRow[];
+  emptyLabel: string;
+  trendsSection?: string;
+  defaultExpanded?: boolean;
+}) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const summaryHint = collapsibleSummary(rows, emptyLabel);
 
   return (
     <div className="border border-ink-100 rounded-md overflow-hidden">
@@ -121,10 +107,12 @@ function CollapsibleAnthropometricsSection({ rows }: { rows: NurseIntakeRow[] })
         )}
         <span className="flex-1 min-w-0">
           <span className="flex items-center justify-between gap-2">
-            <span className="text-[12px] font-medium text-ink-700">Anthropometrics</span>
-            <span className="shrink-0" onClick={e => e.stopPropagation()}>
-              <TrendsOpenButton section="anthropometrics-trends" />
-            </span>
+            <span className="text-[12px] font-medium text-ink-700">{title}</span>
+            {trendsSection ? (
+              <span className="shrink-0" onClick={e => e.stopPropagation()}>
+                <TrendsOpenButton section={trendsSection} />
+              </span>
+            ) : null}
           </span>
           {!expanded && (
             <span className="block text-[11px] text-ink-500 truncate mt-0.5">{summaryHint}</span>
@@ -134,7 +122,7 @@ function CollapsibleAnthropometricsSection({ rows }: { rows: NurseIntakeRow[] })
       {expanded && (
         <div className={cn('px-2.5 pb-2 pt-1 border-t border-ink-100')}>
           {rows.length === 0 ? (
-            <p className="text-[12px] text-ink-500 py-1">No height or waist circumference recorded</p>
+            <p className="text-[12px] text-ink-500 py-1">{emptyLabel}</p>
           ) : (
             <div>
               {rows.map(row => (
@@ -148,11 +136,72 @@ function CollapsibleAnthropometricsSection({ rows }: { rows: NurseIntakeRow[] })
   );
 }
 
+function VitalSignsSection({
+  prominent,
+  normal,
+}: {
+  prominent: NurseIntakeRow[];
+  normal: NurseIntakeRow[];
+}) {
+  const hasAny = prominent.length > 0 || normal.length > 0;
+
+  return (
+    <div>
+      <SectionHeader title="Vital signs" trendsSection="vitals-signs-trends" />
+      {!hasAny ? (
+        <p className="text-[12px] text-ink-500 py-1">No vitals recorded</p>
+      ) : (
+        <div className="space-y-2">
+          {prominent.length > 0 && (
+            <div>
+              {prominent.map(row => (
+                <IntakeRow key={row.label} row={row} prominent />
+              ))}
+            </div>
+          )}
+          {normal.length > 0 && (
+            <CollapsibleIntakeRows
+              title={`Normal vital signs (${normal.length})`}
+              rows={normal}
+              emptyLabel="None"
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IntakeSection({
+  title,
+  trendsSection,
+  rows,
+  emptyLabel,
+}: {
+  title: string;
+  trendsSection: string;
+  rows: NurseIntakeRow[];
+  emptyLabel: string;
+}) {
+  return (
+    <div>
+      <SectionHeader title={title} trendsSection={trendsSection} />
+      {rows.length === 0 ? (
+        <p className="text-[12px] text-ink-500 py-1">{emptyLabel}</p>
+      ) : (
+        <div>
+          {rows.map(row => (
+            <IntakeRow key={row.label} row={row} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function NurseIntakeSidebar({
-  patientId,
   observations,
 }: {
-  patientId: string;
   observations: Observation[];
 }) {
   const summary = buildNurseIntakeSummary(observations);
@@ -160,9 +209,11 @@ export function NurseIntakeSidebar({
     () => anthropometricsForDoctorSidebar(summary.anthropometrics),
     [summary.anthropometrics],
   );
-  const hasAbnormalVitals = summary.vitals.some(
-    r => r.status === 'warning' || r.status === 'critical',
+  const { prominent: prominentVitals, normal: normalVitals } = useMemo(
+    () => partitionVitalSignRows(summary.vitals),
+    [summary.vitals],
   );
+  const hasAbnormalVitals = summary.vitals.some(isAbnormalIntakeRow);
 
   return (
     <Card className="lg:sticky lg:top-[7.5rem]">
@@ -178,18 +229,16 @@ export function NurseIntakeSidebar({
               One or more vital signs are outside the usual range.
             </p>
           )}
-          <IntakeSection
-            title="Vital signs"
-            trendsSection="vitals-signs-trends"
-            patientId={patientId}
-            rows={summary.vitals}
-            emptyLabel="No vitals recorded"
+          <VitalSignsSection prominent={prominentVitals} normal={normalVitals} />
+          <CollapsibleIntakeRows
+            title="Anthropometrics"
+            rows={anthropometrics}
+            emptyLabel="No height or waist circumference recorded"
+            trendsSection="anthropometrics-trends"
           />
-          <CollapsibleAnthropometricsSection rows={anthropometrics} />
           <IntakeSection
             title="Point-of-care tests"
             trendsSection="laboratory-trends"
-            patientId={patientId}
             rows={summary.poc}
             emptyLabel="No POC tests recorded"
           />

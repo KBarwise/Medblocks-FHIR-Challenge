@@ -8,7 +8,27 @@ import { ArrowRight } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default async function PatientChartPage({ params }: { params: { id: string } }) {
+function buildRedirectQuery(searchParams: Record<string, string | string[] | undefined>): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (value === undefined) continue;
+    if (Array.isArray(value)) {
+      for (const v of value) params.append(key, v);
+    } else {
+      params.set(key, value);
+    }
+  }
+  const q = params.toString();
+  return q ? `?${q}` : '';
+}
+
+export default async function PatientChartPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
   const ctx = await loadPatientContext(params.id);
   if (!ctx.patient) notFound();
 
@@ -17,29 +37,23 @@ export default async function PatientChartPage({ params }: { params: { id: strin
     redirect(patientDestination(role, params.id));
   }
 
+  if (role === 'doctor') {
+    const query = buildRedirectQuery(searchParams ?? {});
+    redirect(`/patient/${params.id}/consult/document${query}`);
+  }
+
   return (
     <>
       <PatientClinicalChart patientId={params.id} ctx={ctx} />
 
       <div className="flex justify-end mt-4">
-        {role === 'doctor' && (
-          <Link
-            href={`/patient/${params.id}/consult/document`}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-ink-900 text-white text-[13px] rounded-md hover:bg-ink-700"
-          >
-            Document consultation
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        )}
-        {role === 'nurse' && (
-          <Link
-            href={`/patient/${params.id}/nurse`}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-ink-900 text-white text-[13px] rounded-md hover:bg-ink-700"
-          >
-            Nurse documentation
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        )}
+        <Link
+          href={`/patient/${params.id}/nurse`}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-ink-900 text-white text-[13px] rounded-md hover:bg-ink-700"
+        >
+          Nurse documentation
+          <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
     </>
   );

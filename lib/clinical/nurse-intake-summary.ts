@@ -28,6 +28,25 @@ export function anthropometricsForDoctorSidebar(rows: NurseIntakeRow[]): NurseIn
   return rows.filter(row => !row.code || !DOCTOR_SIDEBAR_ANTHROPOMETRIC_OMIT.has(row.code));
 }
 
+export function isAbnormalIntakeRow(row: NurseIntakeRow): boolean {
+  return row.status === 'warning' || row.status === 'critical';
+}
+
+/** Splits vitals into always-visible (abnormal or unreferenced) vs collapsible normal rows. */
+export function partitionVitalSignRows(vitals: NurseIntakeRow[]): {
+  prominent: NurseIntakeRow[];
+  normal: NurseIntakeRow[];
+} {
+  const prominent: NurseIntakeRow[] = [];
+  const normal: NurseIntakeRow[] = [];
+  for (const row of vitals) {
+    if (row.status === 'normal') normal.push(row);
+    else prominent.push(row);
+  }
+  return { prominent, normal };
+}
+
+
 export type NurseIntakeSummary = {
   vitals: NurseIntakeRow[];
   anthropometrics: NurseIntakeRow[];

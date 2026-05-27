@@ -14,7 +14,7 @@ export function DoctorChartLayout({
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(260px,300px)_1fr] lg:items-start">
       <aside className="min-w-0">
-        <NurseIntakeSidebar patientId={patientId} observations={observations} />
+        <NurseIntakeSidebar observations={observations} />
       </aside>
       <div className="min-w-0 space-y-4">{children}</div>
     </div>
