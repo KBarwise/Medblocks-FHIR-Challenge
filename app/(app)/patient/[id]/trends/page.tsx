@@ -2,11 +2,17 @@ import { notFound, redirect } from 'next/navigation';
 import { getActingRoleFromCookie } from '@/lib/clinic/server-role';
 import { canViewClinicalData, patientDestination } from '@/lib/clinic/access';
 import { loadPatientContext } from '@/lib/patient/load-patient-context';
-import { ClinicalTrendsPanel } from '@/components/patient/clinical-trends-panel';
+import { tabFromTrendsParam } from '@/lib/clinical/trends-navigation';
 
 export const dynamic = 'force-dynamic';
 
-export default async function PatientTrendsPage({ params }: { params: { id: string } }) {
+export default async function PatientTrendsPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams?: { tab?: string };
+}) {
   const ctx = await loadPatientContext(params.id);
   if (!ctx.patient) notFound();
 
@@ -15,13 +21,10 @@ export default async function PatientTrendsPage({ params }: { params: { id: stri
     redirect(patientDestination(role, params.id));
   }
 
-  return (
-    <>
-      <h1 className="text-lg font-medium mb-1">Trends</h1>
-      <p className="text-sm text-ink-500 mb-4">
-        Choose a category, select the measures you want, and view trend lines over time.
-      </p>
-      <ClinicalTrendsPanel patientId={params.id} />
-    </>
-  );
+  const tab = tabFromTrendsParam(searchParams?.tab ?? null);
+  const base =
+    role === 'doctor'
+      ? `/patient/${params.id}/consult/document`
+      : `/patient/${params.id}`;
+  redirect(`${base}?trends=1&tab=${tab}`);
 }

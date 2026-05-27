@@ -6,16 +6,46 @@ import {
   type LabAnalyte,
 } from './lab-catalog';
 import { URINALYSIS_POC } from './urinalysis-poc';
-import { codedObservationValue, latestObservationValue } from './observations';
+import { codedObservationValue, LOINC, latestObservationValue } from './observations';
 import type { Observation } from '@/lib/fhir/resources';
 
 export type NurseIntakeRow = {
   label: string;
+  code?: string;
   value: string;
   unit?: string;
   date?: string;
   status?: 'normal' | 'warning' | 'critical';
 };
+
+/** Anthropometrics already shown in the patient header (doctor sidebar). */
+const DOCTOR_SIDEBAR_ANTHROPOMETRIC_OMIT = new Set<string>([
+  LOINC.bodyWeight,
+  LOINC.bmi,
+]);
+
+export function anthropometricsForDoctorSidebar(rows: NurseIntakeRow[]): NurseIntakeRow[] {
+  return rows.filter(row => !row.code || !DOCTOR_SIDEBAR_ANTHROPOMETRIC_OMIT.has(row.code));
+}
+
+export function isAbnormalIntakeRow(row: NurseIntakeRow): boolean {
+  return row.status === 'warning' || row.status === 'critical';
+}
+
+/** Splits vitals into always-visible (abnormal or unreferenced) vs collapsible normal rows. */
+export function partitionVitalSignRows(vitals: NurseIntakeRow[]): {
+  prominent: NurseIntakeRow[];
+  normal: NurseIntakeRow[];
+} {
+  const prominent: NurseIntakeRow[] = [];
+  const normal: NurseIntakeRow[] = [];
+  for (const row of vitals) {
+    if (row.status === 'normal') normal.push(row);
+    else prominent.push(row);
+  }
+  return { prominent, normal };
+}
+
 
 export type NurseIntakeSummary = {
   vitals: NurseIntakeRow[];
@@ -38,6 +68,7 @@ function quantityRow(def: LabAnalyte, obs: Observation): NurseIntakeRow {
       : undefined;
   return {
     label: def.display,
+    code: def.code,
     value: value !== undefined ? String(value) : '—',
     unit,
     date: formatDate(obs.effectiveDateTime),

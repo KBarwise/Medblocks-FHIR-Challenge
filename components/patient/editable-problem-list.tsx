@@ -147,7 +147,7 @@ export function EditableProblemList({
   }
 
   return (
-    <Card className="mb-3">
+    <Card className="mb-0 h-full min-h-[12rem]">
       <CardTitle icon={<ListTree className="h-4 w-4" />}>Problem list</CardTitle>
 
       {rows.length === 0 && !draftAdd ? (

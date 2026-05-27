@@ -7,12 +7,14 @@ export function MetabolicStat({
   metric,
   formatValue,
   invertDelta = false,
+  className,
 }: {
   label: string;
   metric: MetricDelta;
   formatValue: (v: number) => string;
   /** When true, a decrease is favourable (e.g. weight loss, HbA1c). */
   invertDelta?: boolean;
+  className?: string;
 }) {
   const { current, delta, pctChange, unit, date } = metric;
 
@@ -34,7 +36,7 @@ export function MetabolicStat({
         : 'text-danger';
 
   return (
-    <div className="bg-ink-50 rounded-md px-3 py-2.5 min-w-[7.5rem]">
+    <div className={cn('bg-ink-50 rounded-md px-3 py-2 min-w-0', className)}>
       <div className="text-[10px] uppercase tracking-wide text-ink-500 mb-1">{label}</div>
       <div className="flex items-end gap-1.5">
         <span className="text-lg font-medium tnum text-ink-900">

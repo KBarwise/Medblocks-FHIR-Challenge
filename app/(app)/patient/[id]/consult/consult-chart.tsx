@@ -255,14 +255,6 @@ export function ConsultChart({
       return;
     }
 
-    if (
-      !window.confirm(
-        'Complete this consultation, save the note, and send the patient to reception for checkout?',
-      )
-    ) {
-      return;
-    }
-
     setStepError(null);
     setResult(null);
     const symptomLabels = Object.fromEntries(CONSULT_SYMPTOMS.map(s => [s.code, s.display]));

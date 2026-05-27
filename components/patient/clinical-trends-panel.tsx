@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { TabbedTrendsPanel } from '@/components/trends/TabbedTrendsPanel';
 
-/** Tabbed FHIR observation trends (vitals, POC, laboratory). */
+/** Tabbed FHIR observation trends (vitals and laboratory). */
 export function ClinicalTrendsPanel({ patientId }: { patientId: string }) {
   return (
     <Suspense
