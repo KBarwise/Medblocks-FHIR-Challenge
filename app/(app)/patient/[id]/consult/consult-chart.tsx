@@ -297,14 +297,6 @@ export function ConsultChart({
   }
 
   function sendToNurse() {
-    if (
-      !window.confirm(
-        'Send this patient back to the nurse queue? The consultation will stay open and your draft is kept on this device.',
-      )
-    ) {
-      return;
-    }
-
     setStepError(null);
     setResult(null);
     startTransition(async () => {

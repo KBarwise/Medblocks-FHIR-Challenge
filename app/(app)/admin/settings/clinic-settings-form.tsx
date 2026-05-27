@@ -52,7 +52,7 @@ export function ClinicSettingsForm() {
       </button>
       {saved && (
         <p className="text-[12px] text-accent">
-          Saved — the name is stored for this browser and survives refresh.
+          Saved — the clinic name is stored in app settings and shared across sessions.
         </p>
       )}
       {error && <p className="text-[12px] text-danger">{error}</p>}

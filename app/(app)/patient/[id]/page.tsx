@@ -19,11 +19,7 @@ export default async function PatientChartPage({ params }: { params: { id: strin
 
   return (
     <>
-      <PatientClinicalChart
-        patientId={params.id}
-        ctx={ctx}
-        showTrends={role === 'doctor'}
-      />
+      <PatientClinicalChart patientId={params.id} ctx={ctx} />
 
       <div className="flex justify-end mt-4">
         {role === 'doctor' && (

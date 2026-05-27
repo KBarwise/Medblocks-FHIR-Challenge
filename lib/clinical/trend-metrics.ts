@@ -73,7 +73,6 @@ export const VITAL_CHART_DEFS = VITAL_CHART_GROUPS;
 
 export const PRIORITY_LAB_CODES = [
   { code: LOINC.hba1c, display: 'HbA1c', unit: '%' },
-  { code: LOINC.bmi, display: 'BMI', unit: 'kg/m2' },
   { code: HEADER_LABS.totalCholesterol.code, display: HEADER_LABS.totalCholesterol.display, unit: 'mg/dL' },
   { code: HEADER_LABS.alt.code, display: HEADER_LABS.alt.display, unit: 'U/L' },
   { code: HEADER_LABS.lipase.code, display: HEADER_LABS.lipase.display, unit: 'U/L' },

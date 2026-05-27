@@ -280,6 +280,7 @@ export function NurseChart({
         router.push('/clinic/nurse');
       } catch (err) {
         setResult({ ok: false, message: (err as Error).message });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
   }
