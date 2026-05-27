@@ -132,6 +132,15 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
                 Complete checkout
               </ActionBtn>
             )}
+            {a.status !== 'fulfilled' && a.status !== 'noshow' && a.status !== 'cancelled' && (
+              <ActionBtn
+                disabled={pending}
+                variant="muted"
+                onClick={() => run(() => setAppointmentStatus(id, 'cancelled'))}
+              >
+                Remove
+              </ActionBtn>
+            )}
           </>
         )}
         {deskRole === 'nurse' && row.patientId && (
