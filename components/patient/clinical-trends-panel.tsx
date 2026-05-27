@@ -1,16 +1,15 @@
 'use client';
 
-import { AnthropometricsTrendsDashboard } from '@/components/trends/AnthropometricsTrendsDashboard';
-import { LabTrendsDashboard } from '@/components/trends/LabTrendsDashboard';
-import { VitalsTrendsDashboard } from '@/components/trends/VitalsTrendsDashboard';
+import { Suspense } from 'react';
+import { TabbedTrendsPanel } from '@/components/trends/TabbedTrendsPanel';
 
-/** FHIR Observation trend charts — vitals, anthropometrics, and laboratory. */
+/** Tabbed FHIR observation trends (vitals, POC, laboratory). */
 export function ClinicalTrendsPanel({ patientId }: { patientId: string }) {
   return (
-    <div className="space-y-8">
-      <VitalsTrendsDashboard patientId={patientId} />
-      <AnthropometricsTrendsDashboard patientId={patientId} />
-      <LabTrendsDashboard patientId={patientId} />
-    </div>
+    <Suspense
+      fallback={<p className="text-[12px] text-ink-500 py-6">Loading trends…</p>}
+    >
+      <TabbedTrendsPanel patientId={patientId} />
+    </Suspense>
   );
 }

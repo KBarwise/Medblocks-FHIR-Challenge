@@ -19,7 +19,7 @@ export default async function PatientTrendsPage({ params }: { params: { id: stri
     <>
       <h1 className="text-lg font-medium mb-1">Trends</h1>
       <p className="text-sm text-ink-500 mb-4">
-        Vital signs, anthropometrics, and laboratory results over time.
+        Choose a category, select the measures you want, and view trend lines over time.
       </p>
       <ClinicalTrendsPanel patientId={params.id} />
     </>
