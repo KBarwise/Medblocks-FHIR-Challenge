@@ -26,18 +26,23 @@ function localDateParamFromIso(iso: string): string {
   return `${y}-${m}-${day}`;
 }
 
+function isActiveAppointmentStatus(status: Appointment['status'] | undefined): boolean {
+  return status !== 'fulfilled' && status !== 'noshow' && status !== 'cancelled';
+}
+
 function appointmentStatusPriority(status: Appointment['status'] | undefined): number {
-  // Higher numbers are "more important" for de-duping display.
   if (status === 'arrived') return 3;
   if (status === 'booked') return 2;
   if (status === 'fulfilled') return 1;
-  return 0; // cancelled + noshow (and any unknown future statuses)
+  return 0;
 }
 
 function dedupeAppointmentRows(rows: AppointmentRow[]): AppointmentRow[] {
   const byKey = new Map<string, AppointmentRow>();
   for (const row of rows) {
-    const key = row.patientId ? `${row.patientId}|${row.appointment.start}` : row.appointment.id ?? '';
+    const key = row.patientId
+      ? (isActiveAppointmentStatus(row.appointment.status) ? row.patientId : `${row.patientId}|${row.appointment.start}`)
+      : row.appointment.id ?? '';
     if (!key) continue;
     const existing = byKey.get(key);
     if (!existing) {
@@ -48,7 +53,6 @@ function dedupeAppointmentRows(rows: AppointmentRow[]): AppointmentRow[] {
     const nextPriority = appointmentStatusPriority(row.appointment.status);
     if (nextPriority > existingPriority) byKey.set(key, row);
   }
-
   return [...byKey.values()].sort((a, b) => (a.appointment.start ?? '').localeCompare(b.appointment.start ?? ''));
 }
 
@@ -131,19 +135,13 @@ export async function createAppointment(args: {
 }): Promise<Appointment> {
   const normalizedStart = new Date(args.start).toISOString();
   const date = localDateParamFromIso(normalizedStart);
-
-  // Prevent duplicate active appointments for the same patient at the same time.
-  // This avoids the appointment board showing the same patient multiple times.
   const existingRows = await listAppointmentsForDay(date);
-  const conflict = existingRows.find(
-    r =>
-      r.patientId === args.patientId
-      && r.appointment.start === normalizedStart
-      && r.appointment.status !== 'fulfilled'
-      && r.appointment.status !== 'noshow'
-      && r.appointment.status !== 'cancelled',
+  const existingActiveForPatient = existingRows.find(
+    r => r.patientId === args.patientId && isActiveAppointmentStatus(r.appointment.status),
   );
-  if (conflict) return conflict.appointment;
+  if (existingActiveForPatient) {
+    throw new Error('This patient already has an active appointment on the board for this day.');
+  }
 
   const resource = buildAppointment({ ...args, start: normalizedStart });
   return fhir.create<Appointment>('Appointment', resource);
