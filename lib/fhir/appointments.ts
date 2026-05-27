@@ -14,6 +14,7 @@ export type AppointmentRow = {
   appointment: Appointment;
   patientId?: string;
   patientName: string;
+  patientMrn?: string;
   clinicRole: ClinicRole | null;
   workflow: VisitWorkflow;
 };
@@ -37,13 +38,32 @@ function appointmentStatusPriority(status: Appointment['status'] | undefined): n
   return 0;
 }
 
+function normalizeName(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function getPatientMrn(patient?: Patient): string | undefined {
+  if (!patient) return undefined;
+  const typedMrn = patient.identifier?.find(id =>
+    id.type?.coding?.some(c => c.code === 'MR'),
+  )?.value?.trim();
+  if (typedMrn) return typedMrn;
+  const first = patient.identifier?.[0]?.value?.trim();
+  return first || undefined;
+}
+
 function dedupeAppointmentRows(rows: AppointmentRow[]): AppointmentRow[] {
   const byKey = new Map<string, AppointmentRow>();
   for (const row of rows) {
-    const key = row.patientId
-      ? (isActiveAppointmentStatus(row.appointment.status) ? row.patientId : `${row.patientId}|${row.appointment.start}`)
-      : row.appointment.id ?? '';
-    if (!key) continue;
+    const key = isActiveAppointmentStatus(row.appointment.status)
+      ? (row.patientMrn
+        ? `mrn:${row.patientMrn}`
+        : row.patientId
+          ? `patient:${row.patientId}`
+          : `name:${normalizeName(row.patientName)}`)
+      : (row.patientId
+        ? `${row.patientId}|${row.appointment.start}`
+        : `${normalizeName(row.patientName)}|${row.appointment.start}`);
     const existing = byKey.get(key);
     if (!existing) {
       byKey.set(key, row);
@@ -83,6 +103,7 @@ export function toAppointmentRow(a: Appointment, patients: Map<string, Patient>)
     appointment: a,
     patientId,
     patientName: patient ? fullName(patient) : a.participant?.[0]?.actor?.display ?? 'Unknown patient',
+    patientMrn: getPatientMrn(patient),
     clinicRole: clinicRoleFromAppointment(a.appointmentType),
     workflow: workflowFromAppointment(a),
   };
@@ -135,11 +156,19 @@ export async function createAppointment(args: {
 }): Promise<Appointment> {
   const normalizedStart = new Date(args.start).toISOString();
   const date = localDateParamFromIso(normalizedStart);
+  const patient = await fhir.read<Patient>('Patient', args.patientId);
+  const mrn = getPatientMrn(patient);
   const existingRows = await listAppointmentsForDay(date);
-  const existingActiveForPatient = existingRows.find(
-    r => r.patientId === args.patientId && isActiveAppointmentStatus(r.appointment.status),
+  const existingActive = existingRows.find(
+    r =>
+      isActiveAppointmentStatus(r.appointment.status)
+      && (
+        r.patientId === args.patientId
+        || (mrn && r.patientMrn === mrn)
+        || (!mrn && !r.patientId && normalizeName(r.patientName) === normalizeName(args.patientName ?? ''))
+      ),
   );
-  if (existingActiveForPatient) {
+  if (existingActive) {
     throw new Error('This patient already has an active appointment on the board for this day.');
   }
 
