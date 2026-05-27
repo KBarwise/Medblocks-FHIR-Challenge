@@ -18,6 +18,40 @@ export type AppointmentRow = {
   workflow: VisitWorkflow;
 };
 
+function localDateParamFromIso(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function appointmentStatusPriority(status: Appointment['status'] | undefined): number {
+  // Higher numbers are "more important" for de-duping display.
+  if (status === 'arrived') return 3;
+  if (status === 'booked') return 2;
+  if (status === 'fulfilled') return 1;
+  return 0; // cancelled + noshow (and any unknown future statuses)
+}
+
+function dedupeAppointmentRows(rows: AppointmentRow[]): AppointmentRow[] {
+  const byKey = new Map<string, AppointmentRow>();
+  for (const row of rows) {
+    const key = row.patientId ? `${row.patientId}|${row.appointment.start}` : row.appointment.id ?? '';
+    if (!key) continue;
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, row);
+      continue;
+    }
+    const existingPriority = appointmentStatusPriority(existing.appointment.status);
+    const nextPriority = appointmentStatusPriority(row.appointment.status);
+    if (nextPriority > existingPriority) byKey.set(key, row);
+  }
+
+  return [...byKey.values()].sort((a, b) => (a.appointment.start ?? '').localeCompare(b.appointment.start ?? ''));
+}
+
 function splitAppointments(bundle: Bundle): Appointment[] {
   return (bundle.entry ?? [])
     .map(e => e.resource as Appointment | undefined)
@@ -73,7 +107,8 @@ export async function listAppointmentsForDay(
   try {
     const bundle = await fhir.search<Bundle>('Appointment', params);
     const patients = patientsFromBundle(bundle);
-    return splitAppointments(bundle).map(a => toAppointmentRow(a, patients));
+    const rows = splitAppointments(bundle).map(a => toAppointmentRow(a, patients));
+    return dedupeAppointmentRows(rows);
   } catch {
     const bundle = await fhir.search<Bundle>('Appointment', {
       date,
@@ -83,7 +118,7 @@ export async function listAppointmentsForDay(
     const patients = patientsFromBundle(bundle);
     let rows = splitAppointments(bundle).map(a => toAppointmentRow(a, patients));
     if (clinicRole) rows = rows.filter(r => r.clinicRole === clinicRole);
-    return rows;
+    return dedupeAppointmentRows(rows);
   }
 }
 
@@ -94,7 +129,23 @@ export async function createAppointment(args: {
   start: string;
   description?: string;
 }): Promise<Appointment> {
-  const resource = buildAppointment(args);
+  const normalizedStart = new Date(args.start).toISOString();
+  const date = localDateParamFromIso(normalizedStart);
+
+  // Prevent duplicate active appointments for the same patient at the same time.
+  // This avoids the appointment board showing the same patient multiple times.
+  const existingRows = await listAppointmentsForDay(date);
+  const conflict = existingRows.find(
+    r =>
+      r.patientId === args.patientId
+      && r.appointment.start === normalizedStart
+      && r.appointment.status !== 'fulfilled'
+      && r.appointment.status !== 'noshow'
+      && r.appointment.status !== 'cancelled',
+  );
+  if (conflict) return conflict.appointment;
+
+  const resource = buildAppointment({ ...args, start: normalizedStart });
   return fhir.create<Appointment>('Appointment', resource);
 }
 
