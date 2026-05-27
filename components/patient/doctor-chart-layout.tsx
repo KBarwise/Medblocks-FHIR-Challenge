@@ -3,11 +3,9 @@ import type { Observation } from '@/lib/fhir/resources';
 
 /** Doctor consultation layout: nurse intake on the left, chart content on the right. */
 export function DoctorChartLayout({
-  patientId,
   observations,
   children,
 }: {
-  patientId: string;
   observations: Observation[];
   children: React.ReactNode;
 }) {

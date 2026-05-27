@@ -26,7 +26,7 @@ export default async function ConsultDocumentPage({
   );
 
   return (
-    <DoctorChartLayout patientId={params.id} observations={ctx.observations}>
+    <DoctorChartLayout observations={ctx.observations}>
       <DoctorConsultContext patientId={params.id} ctx={ctx} />
       <Card>
         <CardTitle icon={<ClipboardList className="h-4 w-4" />}>Consultation documentation</CardTitle>
