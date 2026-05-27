@@ -12,7 +12,6 @@ import { NAV_BY_ROLE } from '@/lib/clinic/nav';
 import { canSearchPatients } from '@/lib/clinic/access';
 import { readSidebarCollapsed, writeSidebarCollapsed } from '@/lib/clinic/sidebar-storage';
 import { KioskShell } from './kiosk-shell';
-import { documentTitle } from '@/lib/clinic/branding';
 import { RoleAccessGate } from './role-access-gate';
 
 const ICONS: Record<string, string> = {
@@ -22,6 +21,7 @@ const ICONS: Record<string, string> = {
   '/reception/book': '◷',
   '/clinic/nurse': '✚',
   '/clinic/doctor': '◎',
+  '/clinic/doctor/risk': '⚠',
   '/admin/settings': '⚙',
   '/admin/providers': '👤',
   '/mdm': '⇄',
@@ -60,7 +60,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    document.title = documentTitle(clinicName);
+    document.title = clinicName;
   }, [clinicName]);
 
   function toggleSidebar() {
