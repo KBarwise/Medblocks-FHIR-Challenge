@@ -1,19 +1,20 @@
 import { ClinicProvider } from '@/components/clinic/clinic-context';
 import { AppShell } from '@/components/clinic/app-shell';
-import { getClinicName } from '@/lib/clinic/server-clinic';
+import { documentTitle, PRODUCT_DESCRIPTION } from '@/lib/clinic/branding';
+import { getClinicNameFromCookie } from '@/lib/clinic/server-clinic';
 import { getActingRoleFromCookie } from '@/lib/clinic/server-role';
 import type { Metadata } from 'next';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const clinicName = await getClinicName();
+  const clinicName = getClinicNameFromCookie();
   return {
-    title: clinicName,
-    description: 'Clinical surveillance for incretin therapy',
+    title: { absolute: documentTitle(clinicName) },
+    description: PRODUCT_DESCRIPTION,
   };
 }
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const initialClinicName = await getClinicName();
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const initialClinicName = getClinicNameFromCookie();
   const initialRole = getActingRoleFromCookie();
 
   return (
