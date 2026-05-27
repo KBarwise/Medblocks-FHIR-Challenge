@@ -218,7 +218,7 @@ export function PatientForm({
         saveInFlightRef.current = false;
       }
     },
-    [form, effectiveId, router],
+    [form, effectiveId, intakeId, router],
   );
 
   useEffect(() => {
@@ -278,7 +278,7 @@ export function PatientForm({
     startTransition(async () => {
       try {
         if (effectiveId) {
-          const updated = await updatePatient(effectiveId, form);
+          const updated = await updatePatient(effectiveId, form, intakeId);
           lastPersistedRef.current = serializeForm(form);
           setLastSavedAt(new Date());
           setAutosaveStatus('saved');
