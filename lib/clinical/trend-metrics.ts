@@ -73,7 +73,6 @@ export const VITAL_CHART_DEFS = VITAL_CHART_GROUPS;
 
 export const PRIORITY_LAB_CODES = [
   { code: LOINC.hba1c, display: 'HbA1c', unit: '%' },
-  { code: LOINC.bmi, display: 'BMI', unit: 'kg/m2' },
   { code: HEADER_LABS.totalCholesterol.code, display: HEADER_LABS.totalCholesterol.display, unit: 'mg/dL' },
   { code: HEADER_LABS.alt.code, display: HEADER_LABS.alt.display, unit: 'U/L' },
   { code: HEADER_LABS.lipase.code, display: HEADER_LABS.lipase.display, unit: 'U/L' },
@@ -82,9 +81,17 @@ export const PRIORITY_LAB_CODES = [
 
 export const DEFAULT_LAB_SELECTION = [
   LOINC.hba1c,
-  LOINC.bmi,
   HEADER_LABS.totalCholesterol.code,
 ];
+
+export const ANTHROPOMETRIC_TREND_CODES = [
+  { code: '39156-5', display: 'BMI', unit: 'kg/m2' },
+  { code: '29463-7', display: 'Body weight', unit: 'kg' },
+  { code: '8302-2', display: 'Body height', unit: 'cm' },
+  { code: '8280-0', display: 'Waist circumference', unit: 'cm' },
+] as const;
+
+export const DEFAULT_ANTHROPOMETRIC_SELECTION = ['39156-5', '29463-7'];
 
 export type DateRangePreset = '24h' | '7d' | '30d' | '6m' | '1y' | 'all';
 

@@ -19,7 +19,7 @@ export function VitalsTrendsDashboard({ patientId }: { patientId: string }) {
   const group = VITAL_CHART_GROUPS.find(g => g.id === activeGroup) ?? VITAL_CHART_GROUPS[0]!;
 
   return (
-    <div className="space-y-4 mb-4">
+    <div id="vitals-signs-trends" className="space-y-4 mb-4 scroll-mt-24">
       <Card>
         <CardTitle icon={<Activity className="h-4 w-4" />}>Vital signs trends</CardTitle>
         <p className="text-[12px] text-ink-500 mb-3">

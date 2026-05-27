@@ -20,6 +20,7 @@ export function PatientNav({
     role === 'nurse'
       ? [
           { href: `/patient/${patientId}`, label: 'Chart', exact: true },
+          { href: `/patient/${patientId}/trends`, label: 'Trends' },
           { href: `/patient/${patientId}/nurse`, label: 'Nurse documentation' },
         ]
       : role === 'doctor'

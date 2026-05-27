@@ -4,6 +4,7 @@ import { conditionsForPrescriptionScreening } from '@/lib/clinical/screening-con
 import { activeMedicationSnomedCodes } from '@/lib/clinical/medications';
 import { loadPatientContext } from '@/lib/patient/load-patient-context';
 import { evaluatePrescriptionScreening } from '@/lib/screening/evaluate-prescription';
+import { DoctorChartLayout } from '@/components/patient/doctor-chart-layout';
 import { ConsultChart } from '../consult-chart';
 import { ClipboardList } from 'lucide-react';
 
