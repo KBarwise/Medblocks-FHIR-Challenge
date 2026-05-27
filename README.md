@@ -118,10 +118,6 @@ vercel env add FHIR_BEARER_TOKEN   # if needed
 - **ChunkLoadError in browser** — Hard refresh; redeploy; avoid mixing old tabs with a new deployment.
 - **Kiosk intakes not showing at reception** — Confirm FHIR connectivity; your server must support `Basic` create, search by `identifier`/`code`, and PUT update.
 
-**Yes — you can keep using Cursor after deploying to Vercel.** Clone or open the same repo in Cursor, pull Vercel deployment logs (`vercel logs` or the Vercel dashboard), reproduce issues locally with the same env vars, push fixes, and Vercel will redeploy automatically if connected to Git.
-
----
-
 ## Demo roles
 
 Use the **Acting role** dropdown in the sidebar (staff) or kiosk footer (patient).
