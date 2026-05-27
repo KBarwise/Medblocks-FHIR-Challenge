@@ -25,7 +25,7 @@ export default async function ConsultDocumentPage({
   );
 
   return (
-    <>
+    <DoctorChartLayout patientId={params.id} observations={ctx.observations}>
       <Card>
         <CardTitle icon={<ClipboardList className="h-4 w-4" />}>Consultation documentation</CardTitle>
         <p className="text-[12px] text-ink-500 mb-4">
@@ -41,6 +41,6 @@ export default async function ConsultDocumentPage({
           screening={screening}
         />
       </Card>
-    </>
+    </DoctorChartLayout>
   );
 }
