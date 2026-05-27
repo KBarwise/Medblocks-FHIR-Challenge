@@ -49,6 +49,7 @@ function quantityRow(def: LabAnalyte, obs: Observation): NurseIntakeRow {
       : undefined;
   return {
     label: def.display,
+    code: def.code,
     value: value !== undefined ? String(value) : '—',
     unit,
     date: formatDate(obs.effectiveDateTime),
