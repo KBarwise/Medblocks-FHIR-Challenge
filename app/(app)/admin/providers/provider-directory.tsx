@@ -34,7 +34,7 @@ export function ProviderDirectory({ initial }: { initial: ProviderRow[] }) {
   return (
     <div className="space-y-4">
       <Card>
-        <CardTitle>Add provider</CardTitle>
+        <CardTitle>Add staff member</CardTitle>
         <form onSubmit={onSubmit} className="grid grid-cols-2 gap-3 text-[13px]">
           <div>
             <label className="block text-xs text-ink-500 mb-1">Given name</label>
@@ -46,9 +46,11 @@ export function ProviderDirectory({ initial }: { initial: ProviderRow[] }) {
           </div>
           <div>
             <label className="block text-xs text-ink-500 mb-1">Role</label>
-            <select className={inputClass} value={form.role} onChange={e => set('role', e.target.value as 'doctor' | 'nurse')}>
+            <select className={inputClass} value={form.role} onChange={e => set('role', e.target.value as ProviderFormData['role'])}>
               <option value="doctor">Physician</option>
               <option value="nurse">Nurse</option>
+              <option value="reception">Reception</option>
+              <option value="admin">Admin</option>
             </select>
           </div>
           <div>
@@ -77,7 +79,7 @@ export function ProviderDirectory({ initial }: { initial: ProviderRow[] }) {
       </Card>
 
       <Card>
-        <CardTitle>Provider directory ({initial.length})</CardTitle>
+        <CardTitle>Staff directory ({initial.length})</CardTitle>
         {initial.length === 0 ? (
           <p className="text-[13px] text-ink-500">No practitioners on the server yet.</p>
         ) : (
