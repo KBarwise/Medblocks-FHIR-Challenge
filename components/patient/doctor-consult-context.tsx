@@ -11,9 +11,9 @@ export function DoctorConsultContext({
   ctx: NonNullable<Awaited<ReturnType<typeof loadPatientContext>>>;
 }) {
   return (
-    <>
+    <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
       <PatientMedicationsList medications={ctx.medications} />
       <EditableProblemList patientId={patientId} problems={ctx.problemList} />
-    </>
+    </div>
   );
 }

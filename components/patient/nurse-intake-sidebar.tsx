@@ -216,7 +216,7 @@ export function NurseIntakeSidebar({
   const hasAbnormalVitals = summary.vitals.some(isAbnormalIntakeRow);
 
   return (
-    <Card className="lg:sticky lg:top-[7.5rem]">
+    <Card>
       <CardTitle icon={<Activity className="h-4 w-4" />}>Nurse intake</CardTitle>
       {!nurseIntakeHasData(summary) ? (
         <p className="text-[12px] text-ink-500 py-2">
