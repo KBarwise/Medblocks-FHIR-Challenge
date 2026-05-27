@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #FAFBFC;
+  --surface: #FFFFFF;
+  --border: #E5E8ED;
+
+  /* Semantic tokens for clinical trend charts (HSL components) */
+  --primary: 162 76% 25%;
+  --destructive: 0 56% 40%;
+  --muted-foreground: 215 12% 47%;
+  --chart-1: 211 72% 38%;
+  --chart-2: 162 76% 25%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 280 65% 45%;
+  --chart-5: 0 72% 51%;
+  --chart-grid: 215 20% 92%;
+}
+
+html, body { background: var(--bg); color: #0F1419; }
+body { font-feature-settings: "ss01", "tnum"; }
+
+/* Tabular numerals everywhere data is shown */
+table, .tnum { font-variant-numeric: tabular-nums; }
