@@ -3,11 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardTitle } from '@/components/ui/primitives';
-import { Activity, FlaskConical, HeartPulse } from 'lucide-react';
+import { FlaskConical, HeartPulse } from 'lucide-react';
 import {
-  DEFAULT_POC_TREND_SELECTION,
   DEFAULT_VITAL_TREND_SELECTION,
-  POC_TREND_OPTIONS,
   VITAL_TREND_OPTIONS,
 } from '@/lib/clinical/trend-code-sets';
 import { DEFAULT_LAB_SELECTION, PRIORITY_LAB_CODES } from '@/lib/clinical/trend-metrics';
@@ -19,7 +17,6 @@ export type { TrendsTabId };
 
 const TABS: Array<{ id: TrendsTabId; label: string; icon: typeof HeartPulse }> = [
   { id: 'vitals', label: 'Vital signs', icon: HeartPulse },
-  { id: 'poc', label: 'Point-of-care tests', icon: Activity },
   { id: 'laboratory', label: 'Laboratory tests', icon: FlaskConical },
 ];
 
@@ -111,7 +108,6 @@ export function TabbedTrendsPanel({
         <CardTitle icon={<TabIcon className="h-4 w-4" />}>{activeMeta.label}</CardTitle>
         <p className="text-[12px] text-ink-500 mb-4">
           {activeTab === 'vitals' && 'Select vital signs and anthropometrics to compare over time.'}
-          {activeTab === 'poc' && 'Select point-of-care and dipstick results. Numeric values plot as lines; text results appear in the timeline below.'}
           {activeTab === 'laboratory' && 'Select laboratory analytes (HbA1c, lipids, liver and renal tests, etc.).'}
         </p>
 
@@ -122,16 +118,6 @@ export function TabbedTrendsPanel({
             defaultSelected={DEFAULT_VITAL_TREND_SELECTION}
             exportPrefix="vitals"
             emptyMessage="Select at least one vital sign or anthropometric measure."
-          />
-        )}
-
-        {activeTab === 'poc' && (
-          <MeasureTrendsTab
-            patientId={patientId}
-            codeOptions={POC_TREND_OPTIONS}
-            defaultSelected={DEFAULT_POC_TREND_SELECTION}
-            exportPrefix="poc"
-            emptyMessage="Select at least one point-of-care test."
           />
         )}
 

@@ -33,11 +33,6 @@ export const VITAL_TREND_OPTIONS = [
   ...ANTHROPOMETRICS.map(a => ({ code: a.code, display: a.display })),
 ];
 
-export const POC_TREND_OPTIONS = [
-  ...POC_TESTS.map(t => ({ code: t.code, display: t.display })),
-  ...URINALYSIS_POC.map(u => ({ code: u.loinc, display: u.display })),
-];
 
 export const DEFAULT_VITAL_TREND_SELECTION = ['8480-6', '8462-4', '8867-4', '39156-5'];
 
-export const DEFAULT_POC_TREND_SELECTION = ['2345-7', '81025-3'];

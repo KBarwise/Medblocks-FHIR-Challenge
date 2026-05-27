@@ -48,7 +48,7 @@ export function ClinicalTrendsOverlay() {
               Trends
             </h2>
             <p className="text-[12px] text-ink-500">
-              Compare vitals, point-of-care, and laboratory results over time.
+              Compare vital signs and laboratory results over time.
             </p>
           </div>
           <button
