@@ -69,19 +69,19 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
   const wf = row.workflow;
 
   function run(fn: () => Promise<unknown>) {
-    startTransition(() => {
-      void fn().then(() => {
-        router.refresh();
-      });
+    startTransition(async () => {
+      await fn();
+      router.refresh();
     });
   }
 
   const nurseDocHref = row.patientId
     ? `/patient/${row.patientId}/nurse?appointment=${id}`
     : null;
-  const doctorChartHref = row.patientId
-    ? `/patient/${row.patientId}?appointment=${id}`
+  const doctorDocHref = row.patientId
+    ? `/patient/${row.patientId}/consult/document?appointment=${id}`
     : null;
+
   return (
     <tr className="border-b border-ink-100 last:border-b-0 hover:bg-ink-50">
       <td className="py-2.5 font-mono text-[12px]">{formatTime(a.start)}</td>
@@ -111,18 +111,18 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
                 </ActionBtn>
               </>
             )}
-            {a.status !== 'cancelled' && a.status !== 'fulfilled' && (
+            {(wf === 'ready-checkout' || wf === 'return-nurse') && (
+              <ActionBtn disabled={pending} onClick={() => run(() => advanceVisitWorkflow(id, 'completed'))}>
+                Complete checkout
+              </ActionBtn>
+            )}
+            {a.status !== 'fulfilled' && a.status !== 'noshow' && a.status !== 'cancelled' && (
               <ActionBtn
                 disabled={pending}
                 variant="muted"
                 onClick={() => run(() => setAppointmentStatus(id, 'cancelled'))}
               >
                 Remove
-              </ActionBtn>
-            )}
-            {(wf === 'ready-checkout' || wf === 'return-nurse') && (
-              <ActionBtn disabled={pending} onClick={() => run(() => advanceVisitWorkflow(id, 'completed'))}>
-                Complete checkout
               </ActionBtn>
             )}
           </>
@@ -134,7 +134,7 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
                 disabled={pending}
                 onClick={() =>
                   run(async () => {
-                    if (wf === 'waiting-nurse' || wf === 'return-nurse') {
+                    if (wf !== 'nurse-in-progress') {
                       await advanceVisitWorkflow(id, 'nurse-in-progress', 'arrived');
                     }
                     router.push(nurseDocHref);
@@ -151,7 +151,7 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
             )}
           </>
         )}
-        {deskRole === 'doctor' && row.patientId && doctorChartHref && (
+        {deskRole === 'doctor' && row.patientId && doctorDocHref && (
           <>
             {(wf === 'ready-for-doctor' || wf === 'doctor-in-progress') && (
               <ActionBtn
@@ -161,7 +161,7 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
                     if (wf === 'ready-for-doctor') {
                       await advanceVisitWorkflow(id, 'doctor-in-progress', 'arrived');
                     }
-                    router.push(doctorChartHref);
+                    router.push(doctorDocHref);
                   })
                 }
               >
