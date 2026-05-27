@@ -239,7 +239,7 @@ npm run build
 
 ### Kiosk intakes don’t show at Reception on Vercel
 
-**Expected for this demo.** Kiosk queues are stored in server memory and don’t persist reliably on serverless. Mention this in your submission write-up.
+Kiosk queues are stored as FHIR `Basic` resources. Check that `FHIR_BASE_URL` is set, the server is reachable from Vercel, and it supports `Basic` create/search/update (including search by `identifier` and `code`).
 
 ### Git push asks for password forever
 
@@ -265,7 +265,7 @@ Copy/paste or adapt:
 >  
 > **Demo notes:**  
 > - Role switching (Admin / Reception / Nurse / Doctor / Patient) is for demonstration only — no real authentication.  
-> - Kiosk pre-screening and symptom alerts use in-memory storage and may not persist on Vercel serverless.  
+> - Kiosk pre-screening and symptom alerts are stored as FHIR `Basic` resources on the configured server.  
 > - Requires external FHIR server (`FHIR_BASE_URL`).  
 >  
 > **Quick demo path:** Reception → Find Patient → Book Appointment; Nurse Queue → Start visit; Doctor's Queue → chart; Patient role → Kiosk pre-screening.

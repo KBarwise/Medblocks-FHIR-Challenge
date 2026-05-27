@@ -1,3 +1,9 @@
+import {
+  fhirAcknowledgeReturningSymptomReport,
+  fhirListNewReturningSymptomReports,
+  fhirSaveReturningSymptomReport,
+} from './fhir-kiosk-store';
+
 export type ReturningSymptomReport = {
   id: string;
   createdAt: string;
@@ -9,20 +15,14 @@ export type ReturningSymptomReport = {
   status: 'new' | 'acknowledged';
 };
 
-const reports = new Map<string, ReturningSymptomReport>();
-
-export function saveReturningSymptomReport(report: ReturningSymptomReport): void {
-  reports.set(report.id, report);
+export async function saveReturningSymptomReport(report: ReturningSymptomReport): Promise<void> {
+  await fhirSaveReturningSymptomReport(report);
 }
 
-export function listNewReturningSymptomReports(): ReturningSymptomReport[] {
-  return [...reports.values()]
-    .filter(r => r.status === 'new')
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export async function listNewReturningSymptomReports(): Promise<ReturningSymptomReport[]> {
+  return fhirListNewReturningSymptomReports();
 }
 
-export function acknowledgeReturningSymptomReport(id: string): void {
-  const r = reports.get(id);
-  if (!r) return;
-  reports.set(id, { ...r, status: 'acknowledged' });
+export async function acknowledgeReturningSymptomReport(id: string): Promise<void> {
+  await fhirAcknowledgeReturningSymptomReport(id);
 }

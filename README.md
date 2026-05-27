@@ -11,8 +11,8 @@ Built with **Next.js 14**, **Tailwind CSS**, **TanStack Query**, **Recharts**, a
 These are intentional for a prototype — call them out when submitting or demoing:
 
 1. **Role switching is demo-only** — The “Acting role” dropdown sets a cookie/localStorage value. There is no real authentication. Anyone can switch to Admin.
-2. **Kiosk queues are in-memory** — Pre-screening intake leads and returning-patient symptom alerts are stored in server memory (`lib/kiosk/intake-store.ts`, `lib/kiosk/symptom-report-store.ts`). They are **lost on server restart** and **do not persist reliably on Vercel serverless** (each instance has its own memory). For a production deployment, replace these with a database or FHIR resources.
-3. **FHIR is required** — Patient search, appointments, charts, and screening depend on a reachable FHIR server configured in environment variables.
+2. **Kiosk queues use FHIR Basic resources** — Pre-screening intake leads and returning-patient symptom alerts are stored as `Basic` resources on your FHIR server (`lib/kiosk/fhir-kiosk-store.ts`). They persist across Vercel serverless instances and restarts as long as the FHIR server is reachable and supports `Basic` create/search/update.
+3. **FHIR is required** — Patient search, appointments, charts, kiosk queues, and screening depend on a reachable FHIR server configured in environment variables.
 
 ---
 
@@ -109,14 +109,14 @@ vercel env add FHIR_BEARER_TOKEN   # if needed
 - [ ] **Find Patient** / search returns results (confirms FHIR connectivity)
 - [ ] Switch roles via sidebar dropdown and confirm each home page loads
 - [ ] Kiosk flow (Patient role): pre-screening and returning-patient symptom check
-- [ ] Note: kiosk reception queue may be empty or inconsistent on Vercel due to in-memory storage
+- [ ] Kiosk pre-screening at reception shows pending intakes (stored as FHIR `Basic` resources)
 
 ### Troubleshooting on Vercel
 
 - **Build failed** — Open the deployment log in Vercel; fix TypeScript/lint errors locally, push again.
 - **500 / fetch failed on patient pages** — Usually FHIR URL, CORS, or auth. Test `FHIR_BASE_URL` from your machine; ensure the FHIR server allows requests from Vercel’s IPs or is public.
 - **ChunkLoadError in browser** — Hard refresh; redeploy; avoid mixing old tabs with a new deployment.
-- **Kiosk intakes not showing at reception** — Expected on serverless until intake store is backed by a database.
+- **Kiosk intakes not showing at reception** — Confirm FHIR connectivity; your server must support `Basic` create, search by `identifier`/`code`, and PUT update.
 
 **Yes — you can keep using Cursor after deploying to Vercel.** Clone or open the same repo in Cursor, pull Vercel deployment logs (`vercel logs` or the Vercel dashboard), reproduce issues locally with the same env vars, push fixes, and Vercel will redeploy automatically if connected to Git.
 
@@ -142,7 +142,7 @@ Use the **Acting role** dropdown in the sidebar (staff) or kiosk footer (patient
 app/(app)/          # App routes (reception, clinic queues, patient charts, kiosk, admin)
 components/         # UI, clinic shell, scheduling, trends, kiosk
 lib/fhir/           # FHIR client, patients, appointments, observations
-lib/kiosk/          # Kiosk screening + in-memory intake/symptom stores
+lib/kiosk/          # Kiosk screening + FHIR-backed intake/symptom stores
 lib/clinic/         # Roles, nav, access control
 ```
 

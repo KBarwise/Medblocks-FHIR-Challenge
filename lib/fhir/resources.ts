@@ -260,6 +260,16 @@ export type Practitioner = {
   qualification?: Array<{ code?: CodeableConcept }>;
 };
 
+export type Basic = {
+  resourceType: 'Basic';
+  id?: string;
+  identifier?: Identifier[];
+  code?: CodeableConcept;
+  subject?: Reference;
+  created?: string;
+  extension?: Extension[];
+};
+
 export type Parameters = {
   resourceType: 'Parameters';
   parameter?: Array<{

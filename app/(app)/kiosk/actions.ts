@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'crypto';
 import {
   evaluateKioskScreening,
@@ -7,7 +8,12 @@ import {
   screeningSummaryMessage,
 } from '@/lib/screening/evaluate-kiosk';
 import type { KioskConditionSelection, KioskDemographics } from '@/lib/kiosk/intake-types';
-import { saveKioskIntakeLead, listPendingKioskIntakes, markKioskIntakeRegistered, getKioskIntakeLead } from '@/lib/kiosk/intake-store';
+import {
+  saveKioskIntakeLead,
+  listPendingKioskIntakes,
+  markKioskIntakeRegistered,
+  getKioskIntakeLead,
+} from '@/lib/kiosk/intake-store';
 import { KIOSK_RETURNING_WARNING_SYMPTOMS } from '@/lib/kiosk/returning-symptoms';
 import {
   listNewReturningSymptomReports,
@@ -16,6 +22,10 @@ import {
 import { findPatientByNameAndDob } from '@/lib/fhir/patient-search';
 import { fullName } from '@/lib/utils';
 import { firstContactError, validateContactFields } from '@/lib/validation/contact';
+
+function revalidateKioskQueues() {
+  revalidatePath('/reception');
+}
 
 export async function submitKioskScreening(args: {
   demographics: KioskDemographics;
@@ -59,7 +69,7 @@ export async function submitKioskScreening(args: {
   }
 
   const leadId = randomUUID();
-  saveKioskIntakeLead({
+  await saveKioskIntakeLead({
     id: leadId,
     createdAt: new Date().toISOString(),
     status: 'pending-registration',
@@ -75,6 +85,7 @@ export async function submitKioskScreening(args: {
     screeningOverall: screening.overall,
     screeningSummary: screeningSummaryMessage(screening.overall),
   });
+  revalidateKioskQueues();
 
   return {
     passed: true,
@@ -127,7 +138,7 @@ export async function submitReturningPatientSymptoms(args: {
 
   const urgent = symptoms.length > 0;
 
-  saveReturningSymptomReport({
+  await saveReturningSymptomReport({
     id: randomUUID(),
     createdAt: new Date().toISOString(),
     patientId: args.patientId,
@@ -137,6 +148,7 @@ export async function submitReturningPatientSymptoms(args: {
     urgent,
     status: 'new',
   });
+  revalidateKioskQueues();
 
   return {
     urgent,
@@ -145,13 +157,14 @@ export async function submitReturningPatientSymptoms(args: {
 }
 
 export async function loadKioskIntakeForRegistration(intakeId: string) {
-  const lead = getKioskIntakeLead(intakeId);
+  const lead = await getKioskIntakeLead(intakeId);
   if (!lead || lead.status !== 'pending-registration') return null;
   return lead;
 }
 
 export async function completeKioskIntakeRegistration(intakeId: string, patientId: string) {
-  markKioskIntakeRegistered(intakeId, patientId);
+  await markKioskIntakeRegistered(intakeId, patientId);
+  revalidateKioskQueues();
 }
 
 const DIET_EXERCISE_SUMMARY = 'Diet & exercise pathway — awaiting registration';
@@ -177,7 +190,7 @@ export async function confirmKioskFailChoice(args: {
   }
 
   const leadId = randomUUID();
-  saveKioskIntakeLead({
+  await saveKioskIntakeLead({
     id: leadId,
     createdAt: new Date().toISOString(),
     status: 'pending-registration',
@@ -193,6 +206,7 @@ export async function confirmKioskFailChoice(args: {
     screeningOverall: 'red',
     screeningSummary: DIET_EXERCISE_SUMMARY,
   });
+  revalidateKioskQueues();
 
   return {
     saved: true,
