@@ -82,10 +82,6 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
   const doctorChartHref = row.patientId
     ? `/patient/${row.patientId}?appointment=${id}`
     : null;
-  const doctorDocHref = row.patientId
-    ? `/patient/${row.patientId}/consult/document?appointment=${id}`
-    : null;
-
   return (
     <tr className="border-b border-ink-100 last:border-b-0 hover:bg-ink-50">
       <td className="py-2.5 font-mono text-[12px]">{formatTime(a.start)}</td>
@@ -133,23 +129,20 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
         )}
         {deskRole === 'nurse' && row.patientId && (
           <>
-            {(wf === 'waiting-nurse' || wf === 'return-nurse') && nurseDocHref && (
+            {(wf === 'waiting-nurse' || wf === 'return-nurse' || wf === 'nurse-in-progress') && nurseDocHref && (
               <ActionBtn
                 disabled={pending}
                 onClick={() =>
                   run(async () => {
-                    await advanceVisitWorkflow(id, 'nurse-in-progress', 'arrived');
+                    if (wf === 'waiting-nurse' || wf === 'return-nurse') {
+                      await advanceVisitWorkflow(id, 'nurse-in-progress', 'arrived');
+                    }
                     router.push(nurseDocHref);
                   })
                 }
               >
                 Start
               </ActionBtn>
-            )}
-            {wf === 'nurse-in-progress' && nurseDocHref && (
-              <Link href={nurseDocHref} className="text-info text-[12px] px-1">
-                Documentation
-              </Link>
             )}
             {(wf === 'nurse-in-progress' || wf === 'return-nurse') && (
               <ActionBtn disabled={pending} onClick={() => run(() => advanceVisitWorkflow(id, 'ready-for-doctor'))}>
@@ -174,11 +167,6 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
               >
                 Start
               </ActionBtn>
-            )}
-            {wf === 'doctor-in-progress' && doctorDocHref && (
-              <Link href={doctorDocHref} className="text-info text-[12px] px-1">
-                Documentation
-              </Link>
             )}
           </>
         )}
