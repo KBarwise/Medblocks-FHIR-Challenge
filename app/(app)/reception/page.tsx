@@ -28,6 +28,7 @@ export default async function ReceptionPage({
     r =>
       r.appointment.status !== 'fulfilled'
       && r.appointment.status !== 'noshow'
+      && r.appointment.status !== 'cancelled'
       && !matchesWorkflow(r, workflowForReceptionCheckout()),
   );
 

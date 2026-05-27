@@ -69,10 +69,7 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
   const wf = row.workflow;
 
   function run(fn: () => Promise<unknown>) {
-    startTransition(async () => {
-      await fn();
-      router.refresh();
-    });
+    startTransition(() => void fn());
   }
 
   const nurseDocHref = row.patientId
@@ -117,6 +114,15 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
             {(wf === 'ready-checkout' || wf === 'return-nurse') && (
               <ActionBtn disabled={pending} onClick={() => run(() => advanceVisitWorkflow(id, 'completed'))}>
                 Complete checkout
+              </ActionBtn>
+            )}
+            {a.status !== 'fulfilled' && a.status !== 'noshow' && a.status !== 'cancelled' && (
+              <ActionBtn
+                disabled={pending}
+                variant="muted"
+                onClick={() => run(() => setAppointmentStatus(id, 'cancelled'))}
+              >
+                Remove
               </ActionBtn>
             )}
           </>
