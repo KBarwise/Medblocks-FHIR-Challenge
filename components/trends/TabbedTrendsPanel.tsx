@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardTitle } from '@/components/ui/primitives';
 import { Activity, FlaskConical, HeartPulse } from 'lucide-react';
@@ -11,21 +11,17 @@ import {
   VITAL_TREND_OPTIONS,
 } from '@/lib/clinical/trend-code-sets';
 import { DEFAULT_LAB_SELECTION, PRIORITY_LAB_CODES } from '@/lib/clinical/trend-metrics';
+import { tabFromTrendsParam, type TrendsTabId } from '@/lib/clinical/trends-navigation';
 import { useLabCodeCatalog } from '@/hooks/useObservations';
 import { MeasureTrendsTab } from './MeasureTrendsTab';
 
-export type TrendsTabId = 'vitals' | 'poc' | 'laboratory';
+export type { TrendsTabId };
 
 const TABS: Array<{ id: TrendsTabId; label: string; icon: typeof HeartPulse }> = [
   { id: 'vitals', label: 'Vital signs', icon: HeartPulse },
   { id: 'poc', label: 'Point-of-care tests', icon: Activity },
   { id: 'laboratory', label: 'Laboratory tests', icon: FlaskConical },
 ];
-
-function tabFromParam(value: string | null): TrendsTabId {
-  if (value === 'poc' || value === 'laboratory' || value === 'vitals') return value;
-  return 'vitals';
-}
 
 function LaboratoryTrendsTabContent({
   patientId,
@@ -51,9 +47,31 @@ function LaboratoryTrendsTabContent({
   );
 }
 
-export function TabbedTrendsPanel({ patientId }: { patientId: string }) {
+export function TabbedTrendsPanel({
+  patientId,
+  activeTab: controlledTab,
+  onTabChange,
+}: {
+  patientId: string;
+  activeTab?: TrendsTabId;
+  onTabChange?: (tab: TrendsTabId) => void;
+}) {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TrendsTabId>(() => tabFromParam(searchParams.get('tab')));
+  const urlTab = tabFromTrendsParam(searchParams.get('tab'));
+  const [uncontrolledTab, setUncontrolledTab] = useState<TrendsTabId>(urlTab);
+
+  const isControlled = controlledTab !== undefined && onTabChange !== undefined;
+  const activeTab = isControlled ? controlledTab : uncontrolledTab;
+
+  useEffect(() => {
+    if (isControlled) return;
+    setUncontrolledTab(urlTab);
+  }, [isControlled, urlTab]);
+
+  function selectTab(tab: TrendsTabId) {
+    if (isControlled) onTabChange!(tab);
+    else setUncontrolledTab(tab);
+  }
 
   const labCatalog = useLabCodeCatalog(patientId);
   const labOptions = useMemo(() => {
@@ -75,7 +93,7 @@ export function TabbedTrendsPanel({ patientId }: { patientId: string }) {
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => selectTab(tab.id)}
               className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] border transition-colors ${
                 on
                   ? 'bg-white border-ink-200 text-ink-900 font-medium shadow-sm'

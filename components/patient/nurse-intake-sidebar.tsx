@@ -1,4 +1,5 @@
-import Link from 'next/link';
+'use client';
+
 import { Card, CardTitle } from '@/components/ui/primitives';
 import {
   buildNurseIntakeSummary,
@@ -6,16 +7,12 @@ import {
   type NurseIntakeRow,
 } from '@/lib/clinical/nurse-intake-summary';
 import type { Observation } from '@/lib/fhir/resources';
-import { Activity, LineChart } from 'lucide-react';
-
-function trendsHref(patientId: string, section: string): string {
-  return `/patient/${patientId}/trends#${section}`;
-}
+import { Activity } from 'lucide-react';
+import { TrendsOpenButton } from '@/components/patient/trends-open-button';
 
 function SectionHeader({
   title,
   trendsSection,
-  patientId,
 }: {
   title: string;
   trendsSection: string;
@@ -24,13 +21,7 @@ function SectionHeader({
   return (
     <div className="flex items-center justify-between gap-2 mb-1.5">
       <h4 className="text-[12px] font-medium text-ink-600">{title}</h4>
-      <Link
-        href={trendsHref(patientId, trendsSection)}
-        className="inline-flex items-center gap-1 text-[11px] text-info hover:underline shrink-0"
-      >
-        <LineChart className="h-3 w-3" />
-        Trends
-      </Link>
+      <TrendsOpenButton section={trendsSection} />
     </div>
   );
 }

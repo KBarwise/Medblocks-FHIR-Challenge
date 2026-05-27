@@ -4,6 +4,7 @@ import { PatientNav } from '@/components/patient/patient-nav';
 import { canViewClinicalData } from '@/lib/clinic/access';
 import { getActingRoleFromCookie } from '@/lib/clinic/server-role';
 import { loadPatientContext } from '@/lib/patient/load-patient-context';
+import { PatientChartShell } from '@/components/patient/patient-chart-shell';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +44,9 @@ export default async function PatientLayout({
           <PatientNav patientId={params.id} embedded />
         </div>
       </div>
-      <div className="mx-auto max-w-5xl px-6 py-4">{children}</div>
+      <div className="mx-auto max-w-5xl px-6 py-4">
+        <PatientChartShell patientId={params.id}>{children}</PatientChartShell>
+      </div>
     </div>
   );
 }
