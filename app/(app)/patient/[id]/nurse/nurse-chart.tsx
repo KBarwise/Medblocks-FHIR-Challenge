@@ -280,7 +280,6 @@ export function NurseChart({
         router.push('/clinic/nurse');
       } catch (err) {
         setResult({ ok: false, message: (err as Error).message });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
   }
@@ -583,7 +582,7 @@ export function NurseChart({
               disabled={pending}
               className="px-4 py-2 bg-ink-900 text-white text-[12px] rounded-md hover:bg-ink-700 disabled:opacity-50"
             >
-              {pending ? 'Saving…' : 'Complete documentation'}
+              {pending ? 'Sending…' : 'Complete and send to doctor'}
             </button>
           )}
         </div>

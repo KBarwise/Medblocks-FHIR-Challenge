@@ -41,7 +41,7 @@ export function PatientMedicationsList({ medications }: { medications: Medicatio
   }
 
   return (
-    <Card className="mb-3">
+    <Card className="mb-0 h-full">
       {header}
       <ul className="text-[13px] space-y-2">
         {medications.map(mr => {

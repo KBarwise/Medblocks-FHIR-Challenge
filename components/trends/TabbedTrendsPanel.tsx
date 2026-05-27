@@ -1,31 +1,24 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardTitle } from '@/components/ui/primitives';
-import { Activity, FlaskConical, HeartPulse } from 'lucide-react';
+import { FlaskConical, HeartPulse } from 'lucide-react';
 import {
-  DEFAULT_POC_TREND_SELECTION,
   DEFAULT_VITAL_TREND_SELECTION,
-  POC_TREND_OPTIONS,
   VITAL_TREND_OPTIONS,
 } from '@/lib/clinical/trend-code-sets';
 import { DEFAULT_LAB_SELECTION, PRIORITY_LAB_CODES } from '@/lib/clinical/trend-metrics';
+import { tabFromTrendsParam, type TrendsTabId } from '@/lib/clinical/trends-navigation';
 import { useLabCodeCatalog } from '@/hooks/useObservations';
 import { MeasureTrendsTab } from './MeasureTrendsTab';
 
-export type TrendsTabId = 'vitals' | 'poc' | 'laboratory';
+export type { TrendsTabId };
 
 const TABS: Array<{ id: TrendsTabId; label: string; icon: typeof HeartPulse }> = [
   { id: 'vitals', label: 'Vital signs', icon: HeartPulse },
-  { id: 'poc', label: 'Point-of-care tests', icon: Activity },
   { id: 'laboratory', label: 'Laboratory tests', icon: FlaskConical },
 ];
-
-function tabFromParam(value: string | null): TrendsTabId {
-  if (value === 'poc' || value === 'laboratory' || value === 'vitals') return value;
-  return 'vitals';
-}
 
 function LaboratoryTrendsTabContent({
   patientId,
@@ -51,9 +44,31 @@ function LaboratoryTrendsTabContent({
   );
 }
 
-export function TabbedTrendsPanel({ patientId }: { patientId: string }) {
+export function TabbedTrendsPanel({
+  patientId,
+  activeTab: controlledTab,
+  onTabChange,
+}: {
+  patientId: string;
+  activeTab?: TrendsTabId;
+  onTabChange?: (tab: TrendsTabId) => void;
+}) {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TrendsTabId>(() => tabFromParam(searchParams.get('tab')));
+  const urlTab = tabFromTrendsParam(searchParams.get('tab'));
+  const [uncontrolledTab, setUncontrolledTab] = useState<TrendsTabId>(urlTab);
+
+  const isControlled = controlledTab !== undefined && onTabChange !== undefined;
+  const activeTab = isControlled ? controlledTab : uncontrolledTab;
+
+  useEffect(() => {
+    if (isControlled) return;
+    setUncontrolledTab(urlTab);
+  }, [isControlled, urlTab]);
+
+  function selectTab(tab: TrendsTabId) {
+    if (isControlled) onTabChange!(tab);
+    else setUncontrolledTab(tab);
+  }
 
   const labCatalog = useLabCodeCatalog(patientId);
   const labOptions = useMemo(() => {
@@ -75,7 +90,7 @@ export function TabbedTrendsPanel({ patientId }: { patientId: string }) {
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => selectTab(tab.id)}
               className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] border transition-colors ${
                 on
                   ? 'bg-white border-ink-200 text-ink-900 font-medium shadow-sm'
@@ -93,7 +108,6 @@ export function TabbedTrendsPanel({ patientId }: { patientId: string }) {
         <CardTitle icon={<TabIcon className="h-4 w-4" />}>{activeMeta.label}</CardTitle>
         <p className="text-[12px] text-ink-500 mb-4">
           {activeTab === 'vitals' && 'Select vital signs and anthropometrics to compare over time.'}
-          {activeTab === 'poc' && 'Select point-of-care and dipstick results. Numeric values plot as lines; text results appear in the timeline below.'}
           {activeTab === 'laboratory' && 'Select laboratory analytes (HbA1c, lipids, liver and renal tests, etc.).'}
         </p>
 
@@ -104,16 +118,6 @@ export function TabbedTrendsPanel({ patientId }: { patientId: string }) {
             defaultSelected={DEFAULT_VITAL_TREND_SELECTION}
             exportPrefix="vitals"
             emptyMessage="Select at least one vital sign or anthropometric measure."
-          />
-        )}
-
-        {activeTab === 'poc' && (
-          <MeasureTrendsTab
-            patientId={patientId}
-            codeOptions={POC_TREND_OPTIONS}
-            defaultSelected={DEFAULT_POC_TREND_SELECTION}
-            exportPrefix="poc"
-            emptyMessage="Select at least one point-of-care test."
           />
         )}
 
