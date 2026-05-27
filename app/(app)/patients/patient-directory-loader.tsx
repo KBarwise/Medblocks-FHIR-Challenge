@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { initials } from '@/lib/utils';
 import { useClinic } from '@/components/clinic/clinic-context';
-import { canEditDemographics, patientDestination } from '@/lib/clinic/access';
+import { canEditDemographics, patientDestination, receptionBookPatientUrl } from '@/lib/clinic/access';
 
 type Row = {
   id: string;
@@ -56,27 +56,50 @@ export function PatientDirectoryLoader() {
           {rows.map(p => (
             <tr key={p.id} className="border-b border-ink-100 last:border-b-0 hover:bg-ink-50">
               <td className="py-2.5">
-                <Link href={patientDestination(role, p.id)} className="flex items-center gap-2.5">
-                  <div className="h-7 w-7 rounded-full bg-info-soft text-info flex items-center justify-center text-[11px] font-medium">
-                    {initials(p.name)}
-                  </div>
-                  <div>
-                    <div className="font-medium">{p.name}</div>
-                    <div className="text-[11px] text-ink-500">
-                      {p.gender ?? '?'} · {p.age ?? '?'}y
+                {!canEdit ? (
+                  <Link href={patientDestination(role, p.id)} className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-full bg-info-soft text-info flex items-center justify-center text-[11px] font-medium">
+                      {initials(p.name)}
+                    </div>
+                    <div>
+                      <div className="font-medium">{p.name}</div>
+                      <div className="text-[11px] text-ink-500">
+                        {p.gender ?? '?'} · {p.age ?? '?'}y
+                      </div>
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-full bg-info-soft text-info flex items-center justify-center text-[11px] font-medium">
+                      {initials(p.name)}
+                    </div>
+                    <div>
+                      <div className="font-medium">{p.name}</div>
+                      <div className="text-[11px] text-ink-500">
+                        {p.gender ?? '?'} · {p.age ?? '?'}y
+                      </div>
                     </div>
                   </div>
-                </Link>
+                )}
               </td>
               <td className="py-2.5 font-mono text-[12px] text-ink-500">{p.mrn ?? '–'}</td>
               <td className="py-2.5 text-ink-500">{p.birthDate ?? '–'}</td>
-              <td className="py-2.5 text-right space-x-2">
+              <td className="py-2.5 text-right space-x-2 whitespace-nowrap">
                 {canEdit && (
-                  <Link href={`/register/${p.id}`} className="text-ink-500 text-[12px]">Edit</Link>
+                  <>
+                    <Link href={`/register/${p.id}`} className="text-ink-500 text-[12px]">
+                      Edit demographics
+                    </Link>
+                    <Link href={receptionBookPatientUrl(p.id, p.name)} className="text-info text-[12px]">
+                      Book appointment
+                    </Link>
+                  </>
                 )}
-                <Link href={patientDestination(role, p.id)} className="text-info text-[12px]">
-                  {canEdit ? 'Open →' : 'Chart →'}
-                </Link>
+                {!canEdit && (
+                  <Link href={patientDestination(role, p.id)} className="text-info text-[12px]">
+                    Chart →
+                  </Link>
+                )}
               </td>
             </tr>
           ))}

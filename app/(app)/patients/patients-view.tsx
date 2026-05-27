@@ -8,7 +8,7 @@ import { PatientDirectoryLoader } from './patient-directory-loader';
 import { Search, Shield } from 'lucide-react';
 import { fullName, ageFromBirthDate, initials } from '@/lib/utils';
 import { useClinic } from '@/components/clinic/clinic-context';
-import { canEditDemographics, patientDestination } from '@/lib/clinic/access';
+import { canEditDemographics, patientDestination, receptionBookPatientUrl } from '@/lib/clinic/access';
 
 function patientMrn(p: Patient) {
   return (
@@ -38,7 +38,7 @@ function PatientTable({ patients }: { patients: Patient[] }) {
           return (
             <tr key={p.id} className="border-b border-ink-100 last:border-b-0 hover:bg-ink-50">
               <td className="py-2.5">
-                {p.id ? (
+                {p.id && !canEdit ? (
                   <Link href={patientDestination(role, p.id)} className="flex items-center gap-2.5">
                     <div className="h-7 w-7 rounded-full bg-info-soft text-info flex items-center justify-center text-[11px] font-medium">
                       {initials(name)}
@@ -51,18 +51,35 @@ function PatientTable({ patients }: { patients: Patient[] }) {
                     </div>
                   </Link>
                 ) : (
-                  <span>{name}</span>
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-full bg-info-soft text-info flex items-center justify-center text-[11px] font-medium">
+                      {initials(name)}
+                    </div>
+                    <div>
+                      <div className="font-medium">{name}</div>
+                      <div className="text-[11px] text-ink-500">
+                        {p.gender ?? '?'} · {ageFromBirthDate(p.birthDate) ?? '?'}y
+                      </div>
+                    </div>
+                  </div>
                 )}
               </td>
               <td className="py-2.5 font-mono text-[12px] text-ink-500">{mrn ?? '–'}</td>
               <td className="py-2.5 text-ink-500">{p.birthDate ?? '–'}</td>
               <td className="py-2.5 text-right space-x-2 whitespace-nowrap">
                 {canEdit && p.id && (
-                  <Link href={`/register/${p.id}`} className="text-ink-500 text-[12px]">Edit demographics</Link>
+                  <>
+                    <Link href={`/register/${p.id}`} className="text-ink-500 text-[12px]">
+                      Edit demographics
+                    </Link>
+                    <Link href={receptionBookPatientUrl(p.id, name)} className="text-info text-[12px]">
+                      Book appointment
+                    </Link>
+                  </>
                 )}
-                {p.id && (
+                {p.id && !canEdit && (
                   <Link href={patientDestination(role, p.id)} className="text-info text-[12px]">
-                    {canEdit ? 'Open →' : 'Chart →'}
+                    Chart →
                   </Link>
                 )}
               </td>
