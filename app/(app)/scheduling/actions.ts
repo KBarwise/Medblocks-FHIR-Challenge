@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import {
   createAppointment,
+  findAnyActiveAppointmentForPatient,
   findActiveDoctorAppointmentForPatient,
   findActiveNurseAppointmentForPatient,
   updateAppointmentStatus,
@@ -68,6 +69,9 @@ export async function completeNurseVisit(args: {
   let appointmentId = args.appointmentId?.trim();
   if (!appointmentId) {
     appointmentId = await findActiveNurseAppointmentForPatient(args.patientId);
+  }
+  if (!appointmentId) {
+    appointmentId = await findAnyActiveAppointmentForPatient(args.patientId);
   }
   if (!appointmentId) {
     throw new Error(
