@@ -8,6 +8,7 @@ import { resolveWeightManagementPathway } from '@/lib/clinical/weight-management
 import { loadPatientContext } from '@/lib/patient/load-patient-context';
 import { evaluatePrescriptionScreening } from '@/lib/screening/evaluate-prescription';
 import { DoctorChartLayout } from '@/components/patient/doctor-chart-layout';
+import { DoctorPatientOverview } from '@/components/patient/doctor-patient-overview';
 import { ConsultChart } from '../consult-chart';
 import { ClipboardList } from 'lucide-react';
 
@@ -18,7 +19,7 @@ export default async function ConsultDocumentPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { appointment?: string; trends?: string };
+  searchParams: { appointment?: string };
 }) {
   const ctx = await loadPatientContext(params.id);
   if (!ctx.patient) notFound();
@@ -39,14 +40,16 @@ export default async function ConsultDocumentPage({
 
   return (
     <DoctorChartLayout patientId={params.id} observations={ctx.observations}>
+      <DoctorPatientOverview patientId={params.id} ctx={ctx} />
+
       <Card>
         <CardTitle icon={<ClipboardList className="h-4 w-4" />}>Consultation documentation</CardTitle>
         <p className="text-[12px] text-ink-500 mb-4">
-          Document the visit and complete to send the patient to reception for checkout. Review the{' '}
+          Document the visit below. Nurse vitals and POC are in the left panel. Open the{' '}
           <Link href={`/patient/${params.id}${apptQuery}`} className="text-info hover:underline">
-            clinical chart
+            Clinical chart
           </Link>{' '}
-          for intake, problem list, and medications.
+          tab for trends and the full intake layout.
         </p>
         <ConsultChart
           key={params.id}
