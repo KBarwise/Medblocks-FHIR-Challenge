@@ -1,4 +1,9 @@
+'use client';
+
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Activity, ChevronDown, ChevronRight, LineChart } from 'lucide-react';
 import { Card, CardTitle } from '@/components/ui/primitives';
 import {
   buildNurseIntakeSummary,
@@ -6,37 +11,63 @@ import {
   type NurseIntakeRow,
 } from '@/lib/clinical/nurse-intake-summary';
 import type { Observation } from '@/lib/fhir/resources';
-import { Activity, LineChart } from 'lucide-react';
 
-function trendsHref(patientId: string, section: string): string {
-  return `/patient/${patientId}/trends#${section}`;
+
+function isAbnormalIntakeRow(row: NurseIntakeRow): boolean {
+  return row.status === 'warning' || row.status === 'critical';
+}
+
+function partitionVitalSignRows(vitals: NurseIntakeRow[]): {
+  prominent: NurseIntakeRow[];
+  normal: NurseIntakeRow[];
+} {
+  const prominent: NurseIntakeRow[] = [];
+  const normal: NurseIntakeRow[] = [];
+  for (const row of vitals) {
+    if (row.status === 'normal') normal.push(row);
+    else prominent.push(row);
+  }
+  return { prominent, normal };
+}
+
+function TrendsLink({ section }: { section: string }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const href = useMemo(() => {
+    const q = new URLSearchParams(searchParams.toString());
+    q.set('trends', section);
+    return `${pathname}?${q.toString()}`;
+  }, [pathname, searchParams, section]);
+
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      className="inline-flex items-center gap-1 text-[11px] text-info hover:underline shrink-0"
+    >
+      <LineChart className="h-3 w-3" />
+      Trends
+    </Link>
+  );
 }
 
 function SectionHeader({
   title,
   trendsSection,
-  patientId,
 }: {
   title: string;
   trendsSection: string;
-  patientId: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-2 mb-1.5">
       <h4 className="text-[12px] font-medium text-ink-600">{title}</h4>
-      <Link
-        href={trendsHref(patientId, trendsSection)}
-        className="inline-flex items-center gap-1 text-[11px] text-info hover:underline shrink-0"
-      >
-        <LineChart className="h-3 w-3" />
-        Trends
-      </Link>
+      <TrendsLink section={trendsSection} />
     </div>
   );
 }
 
 function IntakeRow({ row, prominent }: { row: NurseIntakeRow; prominent?: boolean }) {
-  const abnormal = row.status === 'critical' || row.status === 'warning';
+  const abnormal = isAbnormalIntakeRow(row);
   return (
     <div
       className={`py-2 border-b border-ink-50 last:border-b-0 ${
@@ -76,29 +107,92 @@ function IntakeRow({ row, prominent }: { row: NurseIntakeRow; prominent?: boolea
   );
 }
 
-function IntakeSection({
+function collapsibleSummary(rows: NurseIntakeRow[], emptyLabel: string): string {
+  if (rows.length === 0) return emptyLabel;
+  return rows.map(r => `${r.label}: ${r.value}${r.unit ? ` ${r.unit}` : ''}`).join(' · ');
+}
+
+function CollapsibleIntakeRows({
   title,
-  trendsSection,
-  patientId,
   rows,
   emptyLabel,
+  defaultExpanded = false,
 }: {
   title: string;
-  trendsSection: string;
-  patientId: string;
   rows: NurseIntakeRow[];
   emptyLabel: string;
+  defaultExpanded?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const summaryHint = collapsibleSummary(rows, emptyLabel);
+
+  return (
+    <div className="border border-ink-100 rounded-md overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded(v => !v)}
+        className="w-full flex items-start gap-2 px-2.5 py-2 text-left bg-ink-50/60 hover:bg-ink-50 transition-colors"
+        aria-expanded={expanded}
+      >
+        {expanded ? (
+          <ChevronDown className="h-4 w-4 text-ink-500 shrink-0 mt-0.5" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-ink-500 shrink-0 mt-0.5" />
+        )}
+        <span className="flex-1 min-w-0">
+          <span className="text-[12px] font-medium text-ink-700">{title}</span>
+          {!expanded && (
+            <span className="block text-[11px] text-ink-500 truncate mt-0.5">{summaryHint}</span>
+          )}
+        </span>
+      </button>
+      {expanded && (
+        <div className="px-2.5 pb-2 pt-1 border-t border-ink-100">
+          {rows.length === 0 ? (
+            <p className="text-[12px] text-ink-500 py-1">{emptyLabel}</p>
+          ) : (
+            <div>
+              {rows.map(row => (
+                <IntakeRow key={row.label} row={row} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VitalSignsSection({
+  prominent,
+  normal,
+}: {
+  prominent: NurseIntakeRow[];
+  normal: NurseIntakeRow[];
+}) {
+  const hasAny = prominent.length > 0 || normal.length > 0;
+
   return (
     <div>
-      <SectionHeader title={title} trendsSection={trendsSection} patientId={patientId} />
-      {rows.length === 0 ? (
-        <p className="text-[12px] text-ink-500 py-1">{emptyLabel}</p>
+      <SectionHeader title="Vital signs" trendsSection="vitals-signs-trends" />
+      {!hasAny ? (
+        <p className="text-[12px] text-ink-500 py-1">No vitals recorded</p>
       ) : (
-        <div>
-          {rows.map(row => (
-            <IntakeRow key={row.label} row={row} prominent={title === 'Vital signs'} />
-          ))}
+        <div className="space-y-2">
+          {prominent.length > 0 && (
+            <div>
+              {prominent.map(row => (
+                <IntakeRow key={row.label} row={row} prominent />
+              ))}
+            </div>
+          )}
+          {normal.length > 0 && (
+            <CollapsibleIntakeRows
+              title={`Normal vital signs (${normal.length})`}
+              rows={normal}
+              emptyLabel="None"
+            />
+          )}
         </div>
       )}
     </div>
@@ -112,9 +206,19 @@ export function NurseIntakeSidebar({
   patientId: string;
   observations: Observation[];
 }) {
+  void patientId;
   const summary = buildNurseIntakeSummary(observations);
-  const hasAbnormalVitals = summary.vitals.some(
-    r => r.status === 'warning' || r.status === 'critical',
+  const { prominent: prominentVitals, normal: normalVitals } = useMemo(
+    () => partitionVitalSignRows(summary.vitals),
+    [summary.vitals],
+  );
+  const pocAbnormal = useMemo(
+    () => summary.poc.filter(isAbnormalIntakeRow),
+    [summary.poc],
+  );
+  const pocNormal = useMemo(
+    () => summary.poc.filter(row => !isAbnormalIntakeRow(row)),
+    [summary.poc],
   );
 
   return (
@@ -126,32 +230,45 @@ export function NurseIntakeSidebar({
         </p>
       ) : (
         <div className="space-y-4">
-          {hasAbnormalVitals && (
-            <p className="text-[11px] text-warning bg-warning-soft/50 border border-warning/20 rounded-md px-2 py-1.5">
-              One or more vital signs are outside the usual range.
-            </p>
-          )}
-          <IntakeSection
-            title="Vital signs"
-            trendsSection="vitals-signs-trends"
-            patientId={patientId}
-            rows={summary.vitals}
-            emptyLabel="No vitals recorded"
-          />
-          <IntakeSection
-            title="Anthropometrics"
-            trendsSection="anthropometrics-trends"
-            patientId={patientId}
-            rows={summary.anthropometrics}
-            emptyLabel="No height/weight/BMI"
-          />
-          <IntakeSection
-            title="Point-of-care tests"
-            trendsSection="laboratory-trends"
-            patientId={patientId}
-            rows={summary.poc}
-            emptyLabel="No POC tests recorded"
-          />
+          <VitalSignsSection prominent={prominentVitals} normal={normalVitals} />
+
+          <div>
+            <SectionHeader title="Measurements" trendsSection="measurements-trends" />
+            <CollapsibleIntakeRows
+              title={`Measurements (${summary.anthropometrics.length})`}
+              rows={summary.anthropometrics}
+              emptyLabel="No height/weight/BMI"
+              defaultExpanded={summary.anthropometrics.some(isAbnormalIntakeRow)}
+            />
+          </div>
+
+          <div>
+            <SectionHeader
+              title="Point-of-care tests"
+              trendsSection="laboratory-trends"
+            />
+            {summary.poc.length === 0 ? (
+              <p className="text-[12px] text-ink-500 py-1">No POC tests recorded</p>
+            ) : (
+              <div className="space-y-2">
+                {pocAbnormal.length > 0 && (
+                  <div>
+                    {pocAbnormal.map(row => (
+                      <IntakeRow key={row.label} row={row} prominent />
+                    ))}
+                  </div>
+                )}
+                {pocNormal.length > 0 && (
+                  <CollapsibleIntakeRows
+                    title={`Normal point-of-care tests (${pocNormal.length})`}
+                    rows={pocNormal}
+                    emptyLabel="None"
+                  />
+                )}
+              </div>
+            )}
+          </div>
+
           {summary.nursingNote && (
             <div>
               <h4 className="text-[12px] font-medium text-ink-600 mb-1.5">Nursing note</h4>

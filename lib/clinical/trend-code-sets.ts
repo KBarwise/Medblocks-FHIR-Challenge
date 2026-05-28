@@ -1,15 +1,10 @@
-import { ANTHROPOMETRICS, HEADER_LABS, POC_TESTS, VITAL_SIGNS } from './lab-catalog';
+import { ANTHROPOMETRICS, HEADER_LABS, VITAL_SIGNS } from './lab-catalog';
 import { LOINC } from './observations';
-import { URINALYSIS_POC } from './urinalysis-poc';
 
 export const VITAL_LOINC_CODES = new Set(VITAL_SIGNS.map(v => v.code));
 
 export const ANTHROPOMETRIC_LOINC_CODES = new Set(ANTHROPOMETRICS.map(a => a.code));
 
-export const POC_LOINC_CODES = new Set([
-  ...POC_TESTS.map(t => t.code),
-  ...URINALYSIS_POC.map(u => u.loinc),
-]);
 
 const PRIORITY_LAB_SET = new Set<string>([
   LOINC.hba1c,
@@ -20,7 +15,7 @@ const PRIORITY_LAB_SET = new Set<string>([
 ]);
 
 export function isLaboratoryLoinc(code: string, category?: string): boolean {
-  if (VITAL_LOINC_CODES.has(code) || ANTHROPOMETRIC_LOINC_CODES.has(code) || POC_LOINC_CODES.has(code)) {
+  if (VITAL_LOINC_CODES.has(code) || ANTHROPOMETRIC_LOINC_CODES.has(code)) {
     return false;
   }
   const cat = category?.toLowerCase() ?? '';
@@ -28,16 +23,20 @@ export function isLaboratoryLoinc(code: string, category?: string): boolean {
   return cat.includes('laboratory') || PRIORITY_LAB_SET.has(code);
 }
 
-export const VITAL_TREND_OPTIONS = [
-  ...VITAL_SIGNS.map(v => ({ code: v.code, display: v.display })),
-  ...ANTHROPOMETRICS.map(a => ({ code: a.code, display: a.display })),
-];
+export const VITAL_SIGN_TREND_OPTIONS = VITAL_SIGNS.map(v => ({ code: v.code, display: v.display }));
 
-export const POC_TREND_OPTIONS = [
-  ...POC_TESTS.map(t => ({ code: t.code, display: t.display })),
-  ...URINALYSIS_POC.map(u => ({ code: u.loinc, display: u.display })),
-];
+export const MEASUREMENT_TREND_OPTIONS = ANTHROPOMETRICS.map(a => ({
+  code: a.code,
+  display: a.display,
+}));
 
-export const DEFAULT_VITAL_TREND_SELECTION = ['8480-6', '8462-4', '8867-4', '39156-5'];
+/** @deprecated Use VITAL_SIGN_TREND_OPTIONS or MEASUREMENT_TREND_OPTIONS */
+export const VITAL_TREND_OPTIONS = [...VITAL_SIGN_TREND_OPTIONS, ...MEASUREMENT_TREND_OPTIONS];
 
-export const DEFAULT_POC_TREND_SELECTION = ['2345-7', '81025-3'];
+export const DEFAULT_VITAL_SIGN_SELECTION = ['8480-6', '8462-4', '8867-4'];
+
+export const DEFAULT_MEASUREMENT_SELECTION = ['29463-7', '39156-5'];
+
+/** @deprecated Use DEFAULT_VITAL_SIGN_SELECTION */
+export const DEFAULT_VITAL_TREND_SELECTION = DEFAULT_VITAL_SIGN_SELECTION;
+

@@ -73,17 +73,14 @@ export const VITAL_CHART_DEFS = VITAL_CHART_GROUPS;
 
 export const PRIORITY_LAB_CODES = [
   { code: LOINC.hba1c, display: 'HbA1c', unit: '%' },
+  { code: LOINC.bmi, display: 'BMI', unit: 'kg/m2' },
   { code: HEADER_LABS.totalCholesterol.code, display: HEADER_LABS.totalCholesterol.display, unit: 'mg/dL' },
   { code: HEADER_LABS.alt.code, display: HEADER_LABS.alt.display, unit: 'U/L' },
   { code: HEADER_LABS.lipase.code, display: HEADER_LABS.lipase.display, unit: 'U/L' },
   { code: HEADER_LABS.creatinine.code, display: HEADER_LABS.creatinine.display, unit: 'µmol/L' },
 ] as const;
 
-export const DEFAULT_LAB_SELECTION = [
-  LOINC.hba1c,
-  LOINC.bmi,
-  HEADER_LABS.totalCholesterol.code,
-];
+export const DEFAULT_LAB_SELECTION = [LOINC.hba1c, HEADER_LABS.totalCholesterol.code];
 
 export type DateRangePreset = '24h' | '7d' | '30d' | '6m' | '1y' | 'all';
 
