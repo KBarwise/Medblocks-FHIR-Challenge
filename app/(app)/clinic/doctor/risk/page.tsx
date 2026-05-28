@@ -174,14 +174,14 @@ export default async function DoctorRiskDashboardPage({
                         )}
                       </td>
                       <td className="py-2.5 text-right whitespace-nowrap space-x-2">
+                        <Link href={`/patient/${id}`} className="text-info text-[12px] hover:underline">
+                          Chart
+                        </Link>
                         <Link
                           href={`/patient/${id}/consult/document`}
-                          className="text-info text-[12px] hover:underline"
+                          className="text-ink-600 text-[12px] hover:underline"
                         >
-                          Consult
-                        </Link>
-                        <Link href={`/patient/${id}`} className="text-ink-600 text-[12px] hover:underline">
-                          Chart →
+                          Consult →
                         </Link>
                       </td>
                     </tr>

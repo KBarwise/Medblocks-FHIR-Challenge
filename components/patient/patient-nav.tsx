@@ -18,15 +18,12 @@ export function PatientNav({
 
   const tabs =
     role === 'nurse'
-      ? [
-          { href: `/patient/${patientId}/nurse`, label: 'Nurse documentation' },
-        ]
+      ? [{ href: `/patient/${patientId}/nurse`, label: 'Nurse documentation' }]
       : role === 'doctor'
         ? [
-            {
-              href: `/patient/${patientId}/consult/document`,
-              label: 'Consultation note',
-            },
+            { href: `/patient/${patientId}`, label: 'Clinical chart', exact: true as const },
+            { href: `/patient/${patientId}/consult/document`, label: 'Consultation note' },
+            { href: `/patient/${patientId}/trends`, label: 'Trends' },
           ]
         : [];
 

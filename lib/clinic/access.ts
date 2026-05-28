@@ -99,6 +99,10 @@ export function roleAllowsPath(role: ActingRole, pathname: string): boolean {
     return role === 'doctor';
   }
 
+  if (pathname.match(/^\/patient\/[^/]+\/trends$/)) {
+    return canViewClinicalData(role);
+  }
+
   if (pathname.match(/^\/patient\/[^/]+$/)) {
     return role === 'nurse' || role === 'doctor';
   }

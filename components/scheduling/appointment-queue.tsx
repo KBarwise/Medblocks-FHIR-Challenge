@@ -78,7 +78,10 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
   const nurseDocHref = row.patientId
     ? `/patient/${row.patientId}/nurse?appointment=${id}`
     : null;
-  const doctorDocHref = row.patientId
+  const doctorChartHref = row.patientId
+    ? `/patient/${row.patientId}?appointment=${id}`
+    : null;
+  const doctorConsultHref = row.patientId
     ? `/patient/${row.patientId}/consult/document?appointment=${id}`
     : null;
 
@@ -151,22 +154,33 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
             )}
           </>
         )}
-        {deskRole === 'doctor' && row.patientId && doctorDocHref && (
+        {deskRole === 'doctor' && row.patientId && doctorChartHref && (
           <>
             {(wf === 'ready-for-doctor' || wf === 'doctor-in-progress') && (
-              <ActionBtn
-                disabled={pending}
-                onClick={() =>
-                  run(async () => {
-                    if (wf === 'ready-for-doctor') {
-                      await advanceVisitWorkflow(id, 'doctor-in-progress', 'arrived');
-                    }
-                    router.push(doctorDocHref);
-                  })
-                }
-              >
-                Start
-              </ActionBtn>
+              <>
+                <ActionBtn
+                  disabled={pending}
+                  onClick={() =>
+                    run(async () => {
+                      if (wf === 'ready-for-doctor') {
+                        await advanceVisitWorkflow(id, 'doctor-in-progress', 'arrived');
+                      }
+                      router.push(doctorChartHref);
+                    })
+                  }
+                >
+                  Start
+                </ActionBtn>
+                {doctorConsultHref && wf === 'doctor-in-progress' && (
+                  <ActionBtn
+                    disabled={pending}
+                    variant="muted"
+                    onClick={() => router.push(doctorConsultHref)}
+                  >
+                    Documentation
+                  </ActionBtn>
+                )}
+              </>
             )}
           </>
         )}

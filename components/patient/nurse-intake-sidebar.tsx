@@ -30,8 +30,8 @@ function partitionVitalSignRows(vitals: NurseIntakeRow[]): {
 }
 
 function trendsHref(patientId: string, section: string): string {
-  const q = new URLSearchParams({ trends: section });
-  return `/patient/${patientId}/consult/document?${q.toString()}`;
+  const q = new URLSearchParams({ section });
+  return `/patient/${patientId}/trends?${q.toString()}`;
 }
 
 function SectionHeader({
