@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Activity, ChevronDown, ChevronRight, LineChart } from 'lucide-react';
 import { Card, CardTitle } from '@/components/ui/primitives';
 import {
@@ -29,30 +30,38 @@ function partitionVitalSignRows(vitals: NurseIntakeRow[]): {
   return { prominent, normal };
 }
 
-function trendsHref(patientId: string, section: string): string {
-  const q = new URLSearchParams({ section });
-  return `/patient/${patientId}/trends?${q.toString()}`;
+function TrendsLink({ section }: { section: string }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const href = useMemo(() => {
+    const q = new URLSearchParams(searchParams.toString());
+    q.set('trends', section);
+    return `${pathname}?${q.toString()}`;
+  }, [pathname, searchParams, section]);
+
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      className="inline-flex items-center gap-1 text-[11px] text-info hover:underline shrink-0"
+    >
+      <LineChart className="h-3 w-3" />
+      Trends
+    </Link>
+  );
 }
 
 function SectionHeader({
   title,
   trendsSection,
-  patientId,
 }: {
   title: string;
   trendsSection: string;
-  patientId: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-2 mb-1.5">
       <h4 className="text-[12px] font-medium text-ink-600">{title}</h4>
-      <Link
-        href={trendsHref(patientId, trendsSection)}
-        className="inline-flex items-center gap-1 text-[11px] text-info hover:underline shrink-0"
-      >
-        <LineChart className="h-3 w-3" />
-        Trends
-      </Link>
+      <TrendsLink section={trendsSection} />
     </div>
   );
 }
@@ -155,11 +164,9 @@ function CollapsibleIntakeRows({
 }
 
 function VitalSignsSection({
-  patientId,
   prominent,
   normal,
 }: {
-  patientId: string;
   prominent: NurseIntakeRow[];
   normal: NurseIntakeRow[];
 }) {
@@ -167,7 +174,7 @@ function VitalSignsSection({
 
   return (
     <div>
-      <SectionHeader title="Vital signs" trendsSection="vitals-signs-trends" patientId={patientId} />
+      <SectionHeader title="Vital signs" trendsSection="vitals-signs-trends" />
       {!hasAny ? (
         <p className="text-[12px] text-ink-500 py-1">No vitals recorded</p>
       ) : (
@@ -199,6 +206,7 @@ export function NurseIntakeSidebar({
   patientId: string;
   observations: Observation[];
 }) {
+  void patientId;
   const summary = buildNurseIntakeSummary(observations);
   const { prominent: prominentVitals, normal: normalVitals } = useMemo(
     () => partitionVitalSignRows(summary.vitals),
@@ -222,13 +230,12 @@ export function NurseIntakeSidebar({
         </p>
       ) : (
         <div className="space-y-4">
-          <VitalSignsSection patientId={patientId} prominent={prominentVitals} normal={normalVitals} />
+          <VitalSignsSection prominent={prominentVitals} normal={normalVitals} />
 
           <div>
             <SectionHeader
               title="Anthropometrics"
               trendsSection="anthropometrics-trends"
-              patientId={patientId}
             />
             <CollapsibleIntakeRows
               title={`Anthropometrics (${summary.anthropometrics.length})`}
@@ -241,7 +248,6 @@ export function NurseIntakeSidebar({
             <SectionHeader
               title="Point-of-care tests"
               trendsSection="laboratory-trends"
-              patientId={patientId}
             />
             {summary.poc.length === 0 ? (
               <p className="text-[12px] text-ink-500 py-1">No POC tests recorded</p>

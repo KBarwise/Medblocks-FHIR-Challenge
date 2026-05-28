@@ -19,8 +19,9 @@ const TABS: Array<{ id: TrendsTabId; label: string; icon: typeof HeartPulse }> =
   { id: 'laboratory', label: 'Laboratory tests', icon: FlaskConical },
 ];
 
-function tabFromParam(value: string | null): TrendsTabId {
+function tabFromParam(value: string | null, trendsSection: string | null): TrendsTabId {
   if (value === 'laboratory' || value === 'vitals') return value;
+  if (trendsSection?.includes('laboratory')) return 'laboratory';
   return 'vitals';
 }
 
@@ -50,7 +51,10 @@ function LaboratoryTrendsTabContent({
 
 export function TabbedTrendsPanel({ patientId }: { patientId: string }) {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TrendsTabId>(() => tabFromParam(searchParams.get('tab')));
+  const trendsSection = searchParams.get('trends');
+  const [activeTab, setActiveTab] = useState<TrendsTabId>(() =>
+    tabFromParam(searchParams.get('tab'), trendsSection),
+  );
 
   const labCatalog = useLabCodeCatalog(patientId);
   const labOptions = useMemo(() => {

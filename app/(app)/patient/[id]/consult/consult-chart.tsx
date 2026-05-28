@@ -65,7 +65,7 @@ export function ConsultChart({
 }: {
   patientId: string;
   appointmentId?: string;
-  /** When set, Back on the first step returns to the clinical chart. */
+  /** When set, Back on the first step leaves the consult workspace (e.g. doctor queue). */
   chartBackHref?: string;
   existingMedicationCodes?: string[];
   activeMedications?: MedicationRequest[];
@@ -694,7 +694,7 @@ export function ConsultChart({
           disabled={!canGoBack || pending}
           className="px-4 py-2 text-[12px] border border-ink-100 rounded-md bg-white hover:bg-ink-50 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {stepIndex === 0 && chartBackHref ? 'Back to chart' : 'Back'}
+          {stepIndex === 0 && chartBackHref ? 'Back to queue' : 'Back'}
         </button>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <button

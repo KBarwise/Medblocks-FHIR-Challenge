@@ -69,17 +69,11 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
   const wf = row.workflow;
 
   function run(fn: () => Promise<unknown>) {
-    startTransition(async () => {
-      await fn();
-      router.refresh();
-    });
+    startTransition(() => void fn());
   }
 
   const nurseDocHref = row.patientId
     ? `/patient/${row.patientId}/nurse?appointment=${id}`
-    : null;
-  const doctorChartHref = row.patientId
-    ? `/patient/${row.patientId}?appointment=${id}`
     : null;
   const doctorConsultHref = row.patientId
     ? `/patient/${row.patientId}/consult/document?appointment=${id}`
@@ -119,33 +113,27 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
                 Complete checkout
               </ActionBtn>
             )}
-            {a.status !== 'fulfilled' && a.status !== 'noshow' && a.status !== 'cancelled' && (
-              <ActionBtn
-                disabled={pending}
-                variant="muted"
-                onClick={() => run(() => setAppointmentStatus(id, 'cancelled'))}
-              >
-                Remove
-              </ActionBtn>
-            )}
           </>
         )}
         {deskRole === 'nurse' && row.patientId && (
           <>
-            {(wf === 'waiting-nurse' || wf === 'return-nurse' || wf === 'nurse-in-progress') && nurseDocHref && (
+            {(wf === 'waiting-nurse' || wf === 'return-nurse') && nurseDocHref && (
               <ActionBtn
                 disabled={pending}
                 onClick={() =>
                   run(async () => {
-                    if (wf !== 'nurse-in-progress') {
-                      await advanceVisitWorkflow(id, 'nurse-in-progress', 'arrived');
-                    }
+                    await advanceVisitWorkflow(id, 'nurse-in-progress', 'arrived');
                     router.push(nurseDocHref);
                   })
                 }
               >
                 Start
               </ActionBtn>
+            )}
+            {wf === 'nurse-in-progress' && nurseDocHref && (
+              <Link href={nurseDocHref} className="text-info text-[12px] px-1">
+                Documentation
+              </Link>
             )}
             {(wf === 'nurse-in-progress' || wf === 'return-nurse') && (
               <ActionBtn disabled={pending} onClick={() => run(() => advanceVisitWorkflow(id, 'ready-for-doctor'))}>
@@ -154,33 +142,22 @@ function QueueRow({ row, deskRole }: { row: AppointmentRow; deskRole: ActingRole
             )}
           </>
         )}
-        {deskRole === 'doctor' && row.patientId && doctorChartHref && (
+        {deskRole === 'doctor' && row.patientId && doctorConsultHref && (
           <>
             {(wf === 'ready-for-doctor' || wf === 'doctor-in-progress') && (
-              <>
-                <ActionBtn
-                  disabled={pending}
-                  onClick={() =>
-                    run(async () => {
-                      if (wf === 'ready-for-doctor') {
-                        await advanceVisitWorkflow(id, 'doctor-in-progress', 'arrived');
-                      }
-                      router.push(doctorChartHref);
-                    })
-                  }
-                >
-                  Start
-                </ActionBtn>
-                {doctorConsultHref && wf === 'doctor-in-progress' && (
-                  <ActionBtn
-                    disabled={pending}
-                    variant="muted"
-                    onClick={() => router.push(doctorConsultHref)}
-                  >
-                    Documentation
-                  </ActionBtn>
-                )}
-              </>
+              <ActionBtn
+                disabled={pending}
+                onClick={() =>
+                  run(async () => {
+                    if (wf === 'ready-for-doctor') {
+                      await advanceVisitWorkflow(id, 'doctor-in-progress', 'arrived');
+                    }
+                    router.push(doctorConsultHref);
+                  })
+                }
+              >
+                Start
+              </ActionBtn>
             )}
           </>
         )}
