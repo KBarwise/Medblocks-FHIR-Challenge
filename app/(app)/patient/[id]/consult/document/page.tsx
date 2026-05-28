@@ -40,9 +40,9 @@ export default async function ConsultDocumentPage({
     <DoctorChartLayout patientId={params.id} observations={ctx.observations}>
       <DoctorPatientOverview patientId={params.id} ctx={ctx} />
 
-      <Card>
+      <Card className="p-4">
         <CardTitle icon={<ClipboardList className="h-4 w-4" />}>Consultation</CardTitle>
-        <p className="text-[12px] text-ink-500 mb-4">
+        <p className="text-[12px] text-ink-500 mb-3">
           Document the visit below. Nurse vitals and point-of-care results are in the left panel; use
           Trends beside each section to graph values over time.
         </p>

@@ -90,13 +90,16 @@ export function MeasureTrendsTab({
   defaultSelected,
   exportPrefix,
   emptyMessage = 'Select at least one measure to plot.',
+  compact = false,
 }: {
   patientId: string;
   codeOptions: Array<{ code: string; display: string }>;
   defaultSelected: string[];
   exportPrefix: string;
   emptyMessage?: string;
+  compact?: boolean;
 }) {
+  const chartHeight = compact ? 260 : 320;
   const [range, setRange] = useState<DateRangePreset>('all');
   const { dateFrom, dateTo } = useMemo(() => dateRangeBounds(range), [range]);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(defaultSelected));
@@ -150,8 +153,8 @@ export function MeasureTrendsTab({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className={compact ? "space-y-3" : "space-y-4"}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <DateRangePicker value={range} onChange={setRange} />
         <button
           type="button"
@@ -165,7 +168,7 @@ export function MeasureTrendsTab({
 
       <div>
         <div className="text-[11px] font-medium text-ink-600 mb-1.5">Select measures to plot</div>
-        <div className="flex flex-wrap gap-1.5 max-h-36 overflow-auto">
+        <div className={`flex flex-wrap gap-1.5 overflow-auto ${compact ? "max-h-24" : "max-h-36"}`}>
           {codeOptions.map(c => {
             const on = selected.has(c.code);
             return (
@@ -211,7 +214,7 @@ export function MeasureTrendsTab({
           <p className="text-[12px] text-ink-500 py-8 text-center">{emptyMessage}</p>
         )}
         {selectedCodes.length > 0 && isLoading && (
-          <div className="h-[300px] w-full rounded-md bg-ink-50 animate-pulse" />
+          <div className="w-full rounded-md bg-ink-50 animate-pulse" style={{ height: chartHeight }} />
         )}
         {selectedCodes.length > 0 && isError && (
           <div className="text-[12px] py-8 text-center space-y-2">
@@ -236,7 +239,7 @@ export function MeasureTrendsTab({
             series={chartSeries}
             unitLabel={chartSeries.length === 1 ? (chartSeries[0]?.points[0]?.unit ?? '') : 'mixed'}
             showReferenceBand={chartSeries.length === 1}
-            height={320}
+            height={chartHeight}
             showLegend
             animateOnMount
           />

@@ -233,14 +233,12 @@ export function NurseIntakeSidebar({
           <VitalSignsSection prominent={prominentVitals} normal={normalVitals} />
 
           <div>
-            <SectionHeader
-              title="Anthropometrics"
-              trendsSection="anthropometrics-trends"
-            />
+            <SectionHeader title="Measurements" trendsSection="measurements-trends" />
             <CollapsibleIntakeRows
-              title={`Anthropometrics (${summary.anthropometrics.length})`}
+              title={`Measurements (${summary.anthropometrics.length})`}
               rows={summary.anthropometrics}
               emptyLabel="No height/weight/BMI"
+              defaultExpanded={summary.anthropometrics.some(isAbnormalIntakeRow)}
             />
           </div>
 

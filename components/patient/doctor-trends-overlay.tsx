@@ -6,11 +6,11 @@ import { ClinicalTrendsPanel } from '@/components/patient/clinical-trends-panel'
 import { X } from 'lucide-react';
 
 function titleForSection(section: string | null): string {
-  if (!section) return 'Clinical trends';
-  if (section.includes('vital')) return 'Vital signs trends';
-  if (section.includes('anthropometric')) return 'Anthropometric trends';
-  if (section.includes('laboratory')) return 'Laboratory trends';
-  return 'Clinical trends';
+  if (!section) return 'Trends';
+  if (section.includes('laboratory')) return 'Laboratory results';
+  if (section.includes('anthropometric') || section.includes('measurement')) return 'Measurements';
+  if (section.includes('vital')) return 'Vital signs';
+  return 'Trends';
 }
 
 export function DoctorTrendsOverlay({ patientId }: { patientId: string }) {
@@ -32,9 +32,9 @@ export function DoctorTrendsOverlay({ patientId }: { patientId: string }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/35 p-4 sm:p-6">
-      <div className="mx-auto h-full max-w-6xl rounded-lg border border-ink-100 bg-white shadow-xl flex flex-col">
-        <div className="flex items-center justify-between gap-3 border-b border-ink-100 px-4 py-3">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/40 p-2 sm:p-3">
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col rounded-lg border border-ink-100 bg-white shadow-xl">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-ink-100 px-3 py-2">
           <h2 className="text-sm font-medium">{heading}</h2>
           <button
             type="button"
@@ -45,7 +45,7 @@ export function DoctorTrendsOverlay({ patientId }: { patientId: string }) {
             Close
           </button>
         </div>
-        <div className="flex-1 overflow-auto p-4">
+        <div className="min-h-0 flex-1 overflow-auto p-3">
           <ClinicalTrendsPanel patientId={patientId} />
         </div>
       </div>

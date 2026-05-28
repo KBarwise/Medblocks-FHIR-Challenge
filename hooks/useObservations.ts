@@ -6,15 +6,13 @@ import {
   type FetchObservationsOpts,
   type LoincFilter,
 } from '@/lib/fhir/fhirObservations';
+import { isLaboratoryLoinc } from '@/lib/clinical/trend-code-sets';
 import type { Observation } from '@/lib/fhir/resources';
-import { LOINC, observationLoincCode } from '@/lib/clinical/observations';
-import { URINALYSIS_POC } from '@/lib/clinical/urinalysis-poc';
 
-const POC_TREND_EXCLUDE_CODES = new Set<string>([
-  LOINC.bloodGlucosePoc,
-  LOINC.pregnancyTest,
-  ...URINALYSIS_POC.map(f => f.loinc),
-]);
+function observationCategoryLabel(obs: Observation): string | undefined {
+  const cat = obs.category?.[0];
+  return cat?.coding?.[0]?.display ?? cat?.coding?.[0]?.code ?? cat?.text;
+}
 
 export type UseObservationsOpts = FetchObservationsOpts & {
   enabled?: boolean;
@@ -53,12 +51,11 @@ export function useLabCodeCatalog(patientId: string, dateFrom?: string, dateTo?:
       const map = new Map<string, string>();
       for (const o of obs) {
         if (o.valueQuantity?.value === undefined) continue;
-        const loinc = observationLoincCode(o);
-        if (loinc && POC_TREND_EXCLUDE_CODES.has(loinc)) continue;
         const code =
           o.code?.coding?.find(c => c.system?.includes('loinc.org'))?.code
           ?? o.code?.coding?.[0]?.code;
         if (!code) continue;
+        if (!isLaboratoryLoinc(code, observationCategoryLabel(o))) continue;
         const display =
           o.code?.coding?.find(c => c.code === code)?.display
           ?? o.code?.text
