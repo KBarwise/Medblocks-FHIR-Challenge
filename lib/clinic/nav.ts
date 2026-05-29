@@ -30,6 +30,7 @@ export const NAV_BY_ROLE: Record<ActingRole, NavItem[]> = {
   ],
   patient: [
     { href: '/kiosk', label: 'Pre-screening Kiosk' },
+    { href: '/kiosk/track-weight', label: 'Track weight' },
   ],
 };
 
