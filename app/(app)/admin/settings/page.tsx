@@ -45,6 +45,18 @@ export default function AdminSettingsPage() {
       {backends.separateClinicalStore && (
         <Card className="mb-4">
           <CardTitle>Data stores (this deployment)</CardTitle>
+          <p className="text-[12px] text-ink-500 mb-3">
+            EHRbase serves openEHR (Swagger). Clinical FHIR goes through{' '}
+            <a
+              href="https://github.com/ehrbase/fhir-bridge"
+              className="text-brand-600 underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              FHIR Bridge
+            </a>
+            ; set <code className="text-[11px]">FHIR_BRIDGE_URL</code> in Vercel.
+          </p>
           <dl className="text-[12px] space-y-2">
             <div>
               <dt className="text-ink-500">Administrative FHIR</dt>
@@ -52,9 +64,17 @@ export default function AdminSettingsPage() {
               <dd className="text-ink-500 mt-0.5">Patient, practitioner, appointment, kiosk queues</dd>
             </div>
             <div>
-              <dt className="text-ink-500">Clinical store (EHRbase FHIR)</dt>
+              <dt className="text-ink-500">Clinical FHIR (FHIR Bridge)</dt>
               <dd className="font-mono text-ink-800 break-all">{backends.clinicalFhirUrl || '—'}</dd>
               <dd className="text-ink-500 mt-0.5">Chart, vitals, problem list, medications, consult</dd>
+            </div>
+            <div>
+              <dt className="text-ink-500">EHRbase openEHR (bridge backend)</dt>
+              <dd className="font-mono text-ink-800 break-all">{backends.ehrbaseOpenEhrUrl || '—'}</dd>
+              <dd className="text-ink-500 mt-0.5">
+                Bridge env: openEHR v1 base{' '}
+                <span className="font-mono text-ink-700">{backends.ehrbaseOpenEhrV1Url}</span>
+              </dd>
             </div>
           </dl>
         </Card>

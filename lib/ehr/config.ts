@@ -15,8 +15,31 @@ export function usesSeparateClinicalStore(): boolean {
 }
 
 /**
- * FHIR API base for clinical resources on EHRbase.
- * Default path matches standard EHRbase FHIR R4 deployment; override if your install differs.
+ * EHRbase openEHR REST API (Swagger at `/swagger-ui`, AQL at `/rest/openehr/v1/query/aql`).
+ * The Next.js app does not call this directly when using FHIR Bridge — operators point the bridge here.
+ */
+export function getEhrbaseOpenEhrUrl(): string {
+  const raw =
+    process.env.EHRBASE_OPENEHR_URL?.trim()
+    ?? process.env.EHRBASE_BASE_URL?.trim()
+    ?? 'https://ehrbase.codemuseai.com/ehrbase';
+  return raw.replace(/\/$/, '');
+}
+
+/** openEHR v1 API base (trailing slash), for FHIR Bridge `FHIR_BRIDGE_EHRBASE_BASE_URL`. */
+export function getEhrbaseOpenEhrV1BaseUrl(): string {
+  const base = getEhrbaseOpenEhrUrl();
+  if (base.endsWith('/rest/openehr/v1')) return `${base}/`;
+  if (base.endsWith('/rest/openehr/v1/')) return base;
+  return `${base}/rest/openehr/v1/`;
+}
+
+/**
+ * FHIR R4 base URL for clinical resources.
+ * With `CLINICAL_BACKEND=ehrbase` this must be a running
+ * [FHIR Bridge](https://github.com/ehrbase/fhir-bridge) instance — not EHRbase’s openEHR Swagger API.
+ *
+ * Default local dev matches fhir-bridge `server.servlet.context-path` + HAPI servlet (`/fhir`).
  */
 export function getClinicalFhirServerConfig(): FhirServerConfig {
   if (getClinicalBackendId() === 'fhir') {
@@ -24,16 +47,16 @@ export function getClinicalFhirServerConfig(): FhirServerConfig {
   }
 
   const baseUrl = normalizeFhirBaseUrl(
-    process.env.EHRBASE_FHIR_URL
-      ?? process.env.EHRBASE_BASE_URL
-      ?? 'https://ehrbase.codemuseai.com/ehrbase/rest/fhir/R4',
+    process.env.FHIR_BRIDGE_URL
+      ?? process.env.EHRBASE_FHIR_URL
+      ?? 'http://localhost:8888/fhir-bridge/fhir',
   );
 
   return {
     presetId: 'env',
-    label: `EHRbase clinical · ${baseUrl}`,
+    label: `FHIR Bridge (EHRbase) · ${baseUrl}`,
     baseUrl,
-    bearerToken: process.env.EHRBASE_BEARER_TOKEN ?? '',
+    bearerToken: process.env.FHIR_BRIDGE_BEARER_TOKEN ?? process.env.EHRBASE_BEARER_TOKEN ?? '',
   };
 }
 

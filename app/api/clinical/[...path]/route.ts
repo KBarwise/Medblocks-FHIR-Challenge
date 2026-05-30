@@ -4,7 +4,7 @@ import { clinicalFhir, FhirError } from '@/lib/fhir/client';
 export const runtime = 'nodejs';
 
 /**
- * Clinical FHIR proxy (EHRbase when CLINICAL_BACKEND=ehrbase).
+ * Clinical FHIR proxy (FHIR Bridge when CLINICAL_BACKEND=ehrbase).
  * Browser Observation trends and other clinical reads use this prefix.
  */
 
