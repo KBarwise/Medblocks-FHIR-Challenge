@@ -1,4 +1,4 @@
-import { fhir } from '@/lib/fhir/client';
+import { adminFhir, clinicalFhir } from '@/lib/fhir/client';
 import { buildCondition } from '@/lib/fhir/builders';
 import { withWeightPathwayExtension } from '@/lib/clinical/weight-management-pathway';
 import { normalizeKioskIntakeLead, type KioskIntakeLead } from './intake-types';
@@ -10,7 +10,7 @@ function snomedCode(condition: Condition): string | undefined {
 }
 
 async function existingProblemCodes(patientId: string): Promise<Set<string>> {
-  const bundle = await fhir.search<Bundle<Condition>>('Condition', {
+  const bundle = await clinicalFhir.search<Bundle<Condition>>('Condition', {
     patient: patientId,
     category: 'problem-list-item',
     _count: 100,
@@ -32,8 +32,8 @@ export async function persistKioskIntakeToPatient(
   lead: KioskIntakeLead,
 ): Promise<{ conditionsCreated: number }> {
   const normalized = normalizeKioskIntakeLead(lead);
-  const patient = await fhir.read<Patient>('Patient', patientId);
-  await fhir.update<Patient>(
+  const patient = await adminFhir.read<Patient>('Patient', patientId);
+  await adminFhir.update<Patient>(
     'Patient',
     patientId,
     withWeightPathwayExtension(patient, normalized.pathway),
@@ -44,7 +44,7 @@ export async function persistKioskIntakeToPatient(
 
   for (const item of normalized.reportedConditions) {
     if (!item.code || known.has(item.code)) continue;
-    await fhir.create<Condition>(
+    await clinicalFhir.create<Condition>(
       'Condition',
       buildCondition({
         patientId,

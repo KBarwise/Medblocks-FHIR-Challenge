@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { fhir } from '@/lib/fhir/client';
+import { adminFhir, clinicalFhir } from '@/lib/fhir/client';
 import { getActingRoleFromCookie } from '@/lib/clinic/server-role';
 import { splitBundle } from '@/lib/signals/rules';
 import { evaluatePrescriptionScreening } from '@/lib/screening/evaluate-prescription';
@@ -14,8 +14,8 @@ export const dynamic = 'force-dynamic';
 async function loadScreening(patientId: string) {
   const emptyBundle: Bundle = { resourceType: 'Bundle', type: 'searchset', entry: [] };
   const [patient, condBundle] = await Promise.all([
-    fhir.read<Patient>('Patient', patientId).catch(() => null),
-    fhir.search<Bundle<Condition>>('Condition', {
+    adminFhir.read<Patient>('Patient', patientId).catch(() => null),
+    clinicalFhir.search<Bundle<Condition>>('Condition', {
       patient: patientId,
       'clinical-status': 'active',
       _count: 100,

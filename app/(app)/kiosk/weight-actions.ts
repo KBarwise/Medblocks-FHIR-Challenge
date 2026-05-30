@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getActingRoleFromCookie } from '@/lib/clinic/server-role';
 import { buildWeightLossSummary } from '@/lib/kiosk/weight-tracking';
 import { findPatientByNameAndDob } from '@/lib/fhir/patient-search';
-import { fhir } from '@/lib/fhir/client';
+import { clinicalFhir } from '@/lib/fhir/client';
 import { buildObservation, loinc } from '@/lib/fhir/builders';
 import { LOINC, observationsByLoinc } from '@/lib/clinical/observations';
 import { splitBundle } from '@/lib/signals/rules';
@@ -27,7 +27,7 @@ async function resolvePatient(args: { given: string; family: string; birthDate: 
 }
 
 async function loadWeightObservations(patientId: string): Promise<Observation[]> {
-  const bundle = await fhir.search<Bundle<Observation>>('Observation', {
+  const bundle = await clinicalFhir.search<Bundle<Observation>>('Observation', {
     patient: patientId,
     code: `http://loinc.org|${LOINC.bodyWeight}`,
     _count: 100,
@@ -75,7 +75,7 @@ export async function logPatientWeight(args: {
   const patient = await resolvePatient(args);
   const patientId = patient.id!;
 
-  await fhir.create<Observation>(
+  await clinicalFhir.create<Observation>(
     'Observation',
     buildObservation({
       patientId,

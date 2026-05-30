@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { fhir } from '@/lib/fhir/client';
+import { clinicalFhir } from '@/lib/fhir/client';
 import { Card, CardTitle, Metric } from '@/components/ui/primitives';
 import { fullName, ageFromBirthDate, initials } from '@/lib/utils';
 import type { Bundle, MedicationRequest, Patient } from '@/lib/fhir/resources';
@@ -11,7 +11,7 @@ async function loadCohort() {
   // Look for any active MedicationRequest with an SCT code in the incretin set
   // (414438008 GLP-1 receptor agonist hierarchy or tirzepatide)
   try {
-    const meds = await fhir.search<Bundle>('MedicationRequest', {
+    const meds = await clinicalFhir.search<Bundle>('MedicationRequest', {
       status: 'active',
       _include: 'MedicationRequest:patient',
       _count: 200,

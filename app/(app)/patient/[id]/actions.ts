@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { canViewClinicalData } from '@/lib/clinic/access';
 import { getActingRoleFromCookie } from '@/lib/clinic/server-role';
-import { fhir } from '@/lib/fhir/client';
+import { clinicalFhir } from '@/lib/fhir/client';
 import {
   buildCondition,
   buildEncounter,
@@ -83,7 +83,7 @@ async function writeNurseChartObservations(args: NurseChartInput): Promise<numbe
     if (!raw?.trim()) continue;
     const v = parseFloat(raw);
     if (Number.isNaN(v)) continue;
-    const obs = await fhir.create<Observation>('Observation', buildObservation({
+    const obs = await clinicalFhir.create<Observation>('Observation', buildObservation({
       patientId: args.patientId,
       code: loinc(def.code, def.display),
       value: v,
@@ -102,7 +102,7 @@ async function writeNurseChartObservations(args: NurseChartInput): Promise<numbe
     if (def.code === '8302-2') heightCm = v;
     if (def.code === '29463-7') weightKg = v;
     anthroSaved = true;
-    const obs = await fhir.create<Observation>('Observation', buildObservation({
+    const obs = await clinicalFhir.create<Observation>('Observation', buildObservation({
       patientId: args.patientId,
       code: loinc(def.code, def.display),
       value: v,
@@ -116,7 +116,7 @@ async function writeNurseChartObservations(args: NurseChartInput): Promise<numbe
     const heightM = heightCm / 100;
     const bmi = weightKg / (heightM * heightM);
     if (!Number.isNaN(bmi) && Number.isFinite(bmi)) {
-      const obs = await fhir.create<Observation>('Observation', buildObservation({
+      const obs = await clinicalFhir.create<Observation>('Observation', buildObservation({
         patientId: args.patientId,
         code: loinc('39156-5', 'BMI'),
         value: Math.round(bmi * 100) / 100,
@@ -128,7 +128,7 @@ async function writeNurseChartObservations(args: NurseChartInput): Promise<numbe
   }
 
   if (args.pregnancyEligible && args.poc.pregnancy) {
-    const obs = await fhir.create<Observation>('Observation', buildObservationCoded({
+    const obs = await clinicalFhir.create<Observation>('Observation', buildObservationCoded({
       patientId: args.patientId,
       loinc: '81025-3',
       display: 'Pregnancy test',
@@ -141,7 +141,7 @@ async function writeNurseChartObservations(args: NurseChartInput): Promise<numbe
     const v = parseFloat(args.poc.glucose);
     if (!Number.isNaN(v)) {
       const glucoseMgDl = args.poc.glucoseUnit === 'mmol/L' ? v * 18 : v;
-      const obs = await fhir.create<Observation>('Observation', buildObservation({
+      const obs = await clinicalFhir.create<Observation>('Observation', buildObservation({
         patientId: args.patientId,
         code: loinc('2345-7', 'Blood glucose POC'),
         value: Math.round(glucoseMgDl * 100) / 100,
@@ -156,7 +156,7 @@ async function writeNurseChartObservations(args: NurseChartInput): Promise<numbe
     for (const field of URINALYSIS_POC) {
       const result = args.poc.urinalysis[field.loinc]?.trim();
       if (!result) continue;
-      const obs = await fhir.create<Observation>('Observation', buildObservationCoded({
+      const obs = await clinicalFhir.create<Observation>('Observation', buildObservationCoded({
         patientId: args.patientId,
         loinc: field.loinc,
         display: field.display,
@@ -167,7 +167,7 @@ async function writeNurseChartObservations(args: NurseChartInput): Promise<numbe
   }
 
   if (args.note?.trim()) {
-    const obs = await fhir.create<Observation>('Observation', buildObservationString({
+    const obs = await clinicalFhir.create<Observation>('Observation', buildObservationString({
       patientId: args.patientId,
       loinc: '34746-8',
       display: 'Nursing note',
@@ -195,7 +195,7 @@ async function syncNurseMedications(
   patientId: string,
   desired: ConsultMedication[],
 ): Promise<number> {
-  const medBundle = await fhir.search<Bundle<MedicationRequest>>('MedicationRequest', {
+  const medBundle = await clinicalFhir.search<Bundle<MedicationRequest>>('MedicationRequest', {
     patient: patientId,
     status: 'active',
     _count: 100,
@@ -213,7 +213,7 @@ async function syncNurseMedications(
     if (!code || !mr.id) continue;
 
     if (!desiredByCode.has(code)) {
-      await fhir.update<MedicationRequest>('MedicationRequest', mr.id, {
+      await clinicalFhir.update<MedicationRequest>('MedicationRequest', mr.id, {
         ...mr,
         status: 'stopped',
       });
@@ -223,7 +223,7 @@ async function syncNurseMedications(
 
     const rx = desiredByCode.get(code)!;
     if (rx.changeType === 'stop') {
-      await fhir.update<MedicationRequest>('MedicationRequest', mr.id, {
+      await clinicalFhir.update<MedicationRequest>('MedicationRequest', mr.id, {
         ...mr,
         status: 'stopped',
         note: medicationQualifierNotes({ changeType: 'stop', priority: rx.priority }),
@@ -232,7 +232,7 @@ async function syncNurseMedications(
       continue;
     }
     if (!medicationNotesMatch(mr, rx)) {
-      await fhir.update<MedicationRequest>('MedicationRequest', mr.id, {
+      await clinicalFhir.update<MedicationRequest>('MedicationRequest', mr.id, {
         ...mr,
         ...(rx.priority !== 'routine' ? { priority: rx.priority } : { priority: undefined }),
         note: medicationQualifierNotes({
@@ -255,7 +255,7 @@ async function syncNurseMedications(
     if (stillActive.has(rx.code)) continue;
     const med = getCatalogMedication(rx.code);
     if (!med) continue;
-    await fhir.create<MedicationRequest>('MedicationRequest', buildMedicationRequestFromCatalog({
+    await clinicalFhir.create<MedicationRequest>('MedicationRequest', buildMedicationRequestFromCatalog({
       patientId,
       medicationCode: { code: med.code, display: med.display },
       doseText: med.defaultDoseText,
@@ -321,7 +321,7 @@ export async function commitLabImport(
 
   for (const row of rows) {
     if (!row.code || Number.isNaN(row.value)) continue;
-    await fhir.create<Observation>('Observation', buildObservation({
+    await clinicalFhir.create<Observation>('Observation', buildObservation({
       patientId,
       code: loinc(row.code, row.display),
       value: Math.round(row.value * 100) / 100,
@@ -362,7 +362,7 @@ export async function submitConsultation(args: {
   assertClinicalWrite();
   let count = 0;
 
-  const condBundle = await fhir.search<Bundle<Condition>>('Condition', {
+  const condBundle = await clinicalFhir.search<Bundle<Condition>>('Condition', {
     patient: args.patientId,
     _count: 100,
   }).catch(() => ({ resourceType: 'Bundle' as const, type: 'searchset' as const, entry: [] }));
@@ -386,7 +386,7 @@ export async function submitConsultation(args: {
     });
   }
 
-  const medBundle = await fhir.search<Bundle<MedicationRequest>>('MedicationRequest', {
+  const medBundle = await clinicalFhir.search<Bundle<MedicationRequest>>('MedicationRequest', {
     patient: args.patientId,
     status: 'active',
     _count: 100,
@@ -400,7 +400,7 @@ export async function submitConsultation(args: {
   for (const mr of activeMedResources) {
     const code = medicationSnomedCode(mr);
     if (!code || !mr.id || !discontinueSet.has(code)) continue;
-    await fhir.update<MedicationRequest>('MedicationRequest', mr.id, {
+    await clinicalFhir.update<MedicationRequest>('MedicationRequest', mr.id, {
       ...mr,
       status: 'stopped',
       note: medicationQualifierNotes({ changeType: 'stop', priority: 'routine' }),
@@ -409,7 +409,7 @@ export async function submitConsultation(args: {
     existingMedications.delete(code);
   }
 
-  const encounter = await fhir.create('Encounter', buildEncounter({
+  const encounter = await clinicalFhir.create('Encounter', buildEncounter({
     patientId: args.patientId,
     reason: args.reason,
   }));
@@ -417,7 +417,7 @@ export async function submitConsultation(args: {
   count += 1;
 
   for (const code of args.symptomCodes) {
-    await fhir.create('Condition', buildCondition({
+    await clinicalFhir.create('Condition', buildCondition({
       patientId: args.patientId,
       code: { code, display: args.symptomLabels[code] ?? code },
       category: 'encounter-diagnosis',
@@ -433,7 +433,7 @@ export async function submitConsultation(args: {
 
   for (const dx of args.diagnoses) {
     if (existingProblems.has(dx.code)) continue;
-    await fhir.create('Condition', buildCondition({
+    await clinicalFhir.create('Condition', buildCondition({
       patientId: args.patientId,
       code: { code: dx.code, display: dx.display },
       category: 'problem-list-item',
@@ -447,7 +447,7 @@ export async function submitConsultation(args: {
     const agentCode = args.prescribeIncretin.agentCode;
     if (!discontinueSet.has(agentCode) && !existingMedications.has(agentCode)) {
       const agent = PRESCRIBE_AGENTS[agentCode] ?? { display: 'Incretin agent' };
-      await fhir.create<MedicationRequest>('MedicationRequest', buildMedicationRequest({
+      await clinicalFhir.create<MedicationRequest>('MedicationRequest', buildMedicationRequest({
         patientId: args.patientId,
         medicationCode: { code: agentCode, display: agent.display },
         reasonCodes,
@@ -471,7 +471,7 @@ export async function submitConsultation(args: {
     if (orderedMedCodes.has(rx.code) || existingMedications.has(rx.code)) continue;
     const med = getCatalogMedication(rx.code);
     if (!med) continue;
-    await fhir.create<MedicationRequest>('MedicationRequest', buildMedicationRequestFromCatalog({
+    await clinicalFhir.create<MedicationRequest>('MedicationRequest', buildMedicationRequestFromCatalog({
       patientId: args.patientId,
       medicationCode: { code: med.code, display: med.display },
       doseText: med.defaultDoseText,
@@ -492,7 +492,7 @@ export async function submitConsultation(args: {
   for (const panelId of args.labPanels) {
     const panel = LAB_PANELS.find(p => p.id === panelId);
     if (!panel) continue;
-    await fhir.create('ServiceRequest', buildServiceRequest({
+    await clinicalFhir.create('ServiceRequest', buildServiceRequest({
       patientId: args.patientId,
       loinc: panel.code,
       display: panel.codingDisplay,

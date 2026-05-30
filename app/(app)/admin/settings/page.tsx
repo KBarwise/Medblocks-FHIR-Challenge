@@ -10,6 +10,7 @@ import { getTerminologyConfigForAdmin } from '@/lib/terminology/config';
 import { FHIR_COOKIE } from '@/lib/fhir/servers';
 import { TERMINOLOGY_COOKIE } from '@/lib/terminology/servers';
 import { PRODUCT_FULL_NAME } from '@/lib/clinic/branding';
+import { getDeploymentBackendSummary } from '@/lib/ehr/deployment-info';
 import { Database, PlugZap, Settings } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,7 @@ export default function AdminSettingsPage() {
   const customFhirBaseUrl = jar.get(FHIR_COOKIE.customUrl)?.value ?? '';
   const customTermEclUrl = jar.get(TERMINOLOGY_COOKIE.eclUrl)?.value ?? '';
   const customTermOpsUrl = jar.get(TERMINOLOGY_COOKIE.opsUrl)?.value ?? '';
+  const backends = getDeploymentBackendSummary();
 
   return (
     <div className="p-6 max-w-5xl">
@@ -40,8 +42,30 @@ export default function AdminSettingsPage() {
         <ClinicSettingsForm />
       </Card>
 
+      {backends.separateClinicalStore && (
+        <Card className="mb-4">
+          <CardTitle>Data stores (this deployment)</CardTitle>
+          <dl className="text-[12px] space-y-2">
+            <div>
+              <dt className="text-ink-500">Administrative FHIR</dt>
+              <dd className="font-mono text-ink-800 break-all">{backends.adminFhirUrl || '—'}</dd>
+              <dd className="text-ink-500 mt-0.5">Patient, practitioner, appointment, kiosk queues</dd>
+            </div>
+            <div>
+              <dt className="text-ink-500">Clinical store (EHRbase FHIR)</dt>
+              <dd className="font-mono text-ink-800 break-all">{backends.clinicalFhirUrl || '—'}</dd>
+              <dd className="text-ink-500 mt-0.5">Chart, vitals, problem list, medications, consult</dd>
+            </div>
+          </dl>
+        </Card>
+      )}
+
       <Card className="mb-4">
-        <CardTitle icon={<Database className="h-4 w-4" />}>FHIR server</CardTitle>
+        <CardTitle icon={<Database className="h-4 w-4" />}>Administrative FHIR server</CardTitle>
+        <p className="text-[12px] text-ink-500 mb-3">
+          Demographics and scheduling. Clinical chart data uses EHRbase when{' '}
+          <code className="text-[11px]">CLINICAL_BACKEND=ehrbase</code>.
+        </p>
         <FhirServerForm
           initial={{
             presetId: fhir.presetId,

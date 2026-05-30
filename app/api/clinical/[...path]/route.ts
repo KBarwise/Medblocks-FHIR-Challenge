@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminFhir, FhirError } from '@/lib/fhir/client';
+import { clinicalFhir, FhirError } from '@/lib/fhir/client';
 
 export const runtime = 'nodejs';
 
 /**
- * Administrative FHIR proxy. Forwards GET, POST, PUT, DELETE under /api/fhir/*
- * to FHIR_BASE_URL (demographics, scheduling). Clinical chart data uses /api/clinical.
- *
- * The browser never sees the FHIR base URL or the bearer token.
- *
- * In production, gate this by clinician session and enforce SMART scopes
- * before allowing the forward. Also emit an AuditEvent on every write.
+ * Clinical FHIR proxy (EHRbase when CLINICAL_BACKEND=ehrbase).
+ * Browser Observation trends and other clinical reads use this prefix.
  */
 
 function path(req: NextRequest, params: { path?: string[] }) {
@@ -19,14 +14,18 @@ function path(req: NextRequest, params: { path?: string[] }) {
   return `/${p}${qs}`;
 }
 
-async function forward(req: NextRequest, method: 'GET' | 'POST' | 'PUT' | 'DELETE', params: { path?: string[] }) {
+async function forward(
+  req: NextRequest,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  params: { path?: string[] },
+) {
   try {
     const body = method === 'GET' || method === 'DELETE' ? undefined : await req.json();
-    const data = await adminFhir.raw(path(req, params), { method, body, revalidate: false });
+    const data = await clinicalFhir.raw(path(req, params), { method, body, revalidate: false });
     return NextResponse.json(data);
   } catch (err) {
     if (err instanceof FhirError) {
-      return NextResponse.json(err.outcome ?? { error: err.message }, { status: err.status });
+      return NextResponse.json(err.outcome ?? { error: err.message }, { status: err.status || 502 });
     }
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }

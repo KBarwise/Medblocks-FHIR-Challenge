@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fhir } from '@/lib/fhir/client';
+import { clinicalFhir } from '@/lib/fhir/client';
 import { evaluateSignals, splitBundle } from '@/lib/signals/rules';
 import type { Bundle, Condition, Observation } from '@/lib/fhir/resources';
 
@@ -16,12 +16,12 @@ export async function GET(_req: NextRequest, ctx: { params: { patientId: string 
   const { patientId } = ctx.params;
   try {
     const [obsBundle, condBundle] = await Promise.all([
-      fhir.search<Bundle<Observation>>('Observation', {
+      clinicalFhir.search<Bundle<Observation>>('Observation', {
         patient: patientId,
         _count: 200,
         _sort: '-date',
       }),
-      fhir.search<Bundle<Condition>>('Condition', {
+      clinicalFhir.search<Bundle<Condition>>('Condition', {
         patient: patientId,
         _count: 100,
       }),
