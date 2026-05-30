@@ -1,0 +1,28 @@
+# Overlay for num-fhir-bridge (see NUM-Forschungsdatenplattform/num-fhir-bridge).
+# Env vars in docker-compose.yml override these when set.
+
+fhir-bridge:
+  mode: openehr
+  cors:
+    allowed-headers: '*'
+    allowed-methods: '*'
+    allowed-origins: '*'
+  fhir:
+    validation:
+      terminology:
+        mode: none
+  openehr:
+    url: https://ehrbase.codemuseai.com/ehrbase/
+    security:
+      type: none
+  security:
+    type: none
+
+demographics:
+  patient:
+    url: https://term.codemuseai.com/fhir/Patient/
+
+server:
+  port: 8888
+  servlet:
+    context-path: /fhir-bridge

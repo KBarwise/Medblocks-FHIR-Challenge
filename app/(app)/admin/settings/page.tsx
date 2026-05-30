@@ -10,7 +10,11 @@ import { getTerminologyConfigForAdmin } from '@/lib/terminology/config';
 import { FHIR_COOKIE } from '@/lib/fhir/servers';
 import { TERMINOLOGY_COOKIE } from '@/lib/terminology/servers';
 import { PRODUCT_FULL_NAME } from '@/lib/clinic/branding';
-import { getDeploymentBackendSummary, probeOpenFhirHealth } from '@/lib/ehr/deployment-info';
+import {
+  getDeploymentBackendSummary,
+  probeFhirBridgeHealth,
+  probeOpenFhirHealth,
+} from '@/lib/ehr/deployment-info';
 import { Database, PlugZap, Settings } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -23,7 +27,9 @@ export default async function AdminSettingsPage() {
   const customTermEclUrl = jar.get(TERMINOLOGY_COOKIE.eclUrl)?.value ?? '';
   const customTermOpsUrl = jar.get(TERMINOLOGY_COOKIE.opsUrl)?.value ?? '';
   const backends = getDeploymentBackendSummary();
-  const openFhirHealth = backends.separateClinicalStore ? await probeOpenFhirHealth() : undefined;
+  const [fhirBridgeHealth, openFhirHealth] = backends.separateClinicalStore
+    ? await Promise.all([probeFhirBridgeHealth(), probeOpenFhirHealth()])
+    : [undefined, undefined];
 
   return (
     <div className="p-6 max-w-5xl">
@@ -49,14 +55,15 @@ export default async function AdminSettingsPage() {
           <p className="text-[12px] text-ink-500 mb-3">
             EHRbase serves openEHR (Swagger). Clinical FHIR goes through{' '}
             <a
-              href="https://github.com/ehrbase/fhir-bridge"
+              href="https://github.com/NUM-Forschungsdatenplattform/num-fhir-bridge"
               className="text-brand-600 underline"
               target="_blank"
               rel="noreferrer"
             >
-              FHIR Bridge
+              NUM FHIR Bridge
             </a>{' '}
-            (set <code className="text-[11px]">FHIR_BRIDGE_URL</code>).{' '}
+            (<code className="text-[11px]">infra/fhir-bridge</code> · set{' '}
+            <code className="text-[11px]">FHIR_BRIDGE_URL</code>).{' '}
             <a
               href="https://open-fhir.com"
               className="text-brand-600 underline"
@@ -74,9 +81,17 @@ export default async function AdminSettingsPage() {
               <dd className="text-ink-500 mt-0.5">Patient, practitioner, appointment, kiosk queues</dd>
             </div>
             <div>
-              <dt className="text-ink-500">Clinical FHIR (FHIR Bridge)</dt>
+              <dt className="text-ink-500">Clinical FHIR (NUM FHIR Bridge)</dt>
               <dd className="font-mono text-ink-800 break-all">{backends.clinicalFhirUrl || '—'}</dd>
-              <dd className="text-ink-500 mt-0.5">Chart, vitals, problem list, medications, consult</dd>
+              <dd className="text-ink-500 mt-0.5">
+                Chart, vitals, problem list, medications, consult
+                {fhirBridgeHealth === 'up' && (
+                  <span className="ml-1.5 text-accent font-medium">· metadata OK</span>
+                )}
+                {fhirBridgeHealth === 'down' && (
+                  <span className="ml-1.5 text-danger font-medium">· not reachable</span>
+                )}
+              </dd>
             </div>
             <div>
               <dt className="text-ink-500">EHRbase openEHR (bridge backend)</dt>

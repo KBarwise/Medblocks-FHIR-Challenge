@@ -1,7 +1,7 @@
 /**
  * Clinical FHIR — Observation, Condition, MedicationRequest, Encounter, ServiceRequest.
- * When CLINICAL_BACKEND=ehrbase, targets FHIR Bridge (FHIR R4 → EHRbase openEHR), not the
- * EHRbase Swagger/openEHR API. See docs/DEPLOY-CODEMUSE-EHRBASE.md.
+ * When CLINICAL_BACKEND=ehrbase, targets NUM FHIR Bridge (FHIR R4 → EHRbase openEHR).
+ * Install: infra/fhir-bridge — see docs/DEPLOY-CODEMUSE-EHRBASE.md.
  */
 
 import { getClinicalFhirServerConfig } from '@/lib/ehr/config';

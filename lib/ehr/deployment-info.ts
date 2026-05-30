@@ -27,6 +27,23 @@ export function getDeploymentBackendSummary() {
   };
 }
 
+/** Probe configured FHIR Bridge metadata endpoint. */
+export async function probeFhirBridgeHealth(): Promise<'up' | 'down' | 'unknown'> {
+  const clinical = getClinicalFhirServerConfig();
+  if (!clinical.baseUrl) return 'unknown';
+  try {
+    const url = `${clinical.baseUrl.replace(/\/$/, '')}/metadata`;
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: { Accept: 'application/fhir+json' },
+      signal: AbortSignal.timeout(8000),
+    });
+    return res.ok ? 'up' : 'down';
+  } catch {
+    return 'down';
+  }
+}
+
 /** Optional health probe for openFHIR (mapping engine). */
 export async function probeOpenFhirHealth(): Promise<'up' | 'down' | 'unknown'> {
   try {

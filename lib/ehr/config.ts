@@ -47,7 +47,7 @@ export function getOpenFhirUrl(): string {
 /**
  * FHIR R4 base URL for clinical resources.
  * With `CLINICAL_BACKEND=ehrbase` this must be a running
- * [FHIR Bridge](https://github.com/ehrbase/fhir-bridge) instance — not EHRbase’s openEHR Swagger API.
+ * [NUM FHIR Bridge](https://github.com/NUM-Forschungsdatenplattform/num-fhir-bridge) — not EHRbase’s openEHR Swagger API.
  *
  * Default local dev matches fhir-bridge `server.servlet.context-path` + HAPI servlet (`/fhir`).
  */
