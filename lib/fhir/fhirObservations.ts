@@ -2,7 +2,13 @@ import type { Bundle, Observation } from '@/lib/fhir/resources';
 
 export type LoincFilter = { system: 'http://loinc.org'; code: string }[];
 
-const FHIR_PROXY = '/api/fhir';
+/** Client-safe: must not import server-only config (cookies). */
+function fhirProxyBase(): string {
+  if (process.env.NEXT_PUBLIC_CLINICAL_API_PREFIX) {
+    return process.env.NEXT_PUBLIC_CLINICAL_API_PREFIX;
+  }
+  return process.env.NEXT_PUBLIC_CLINICAL_BACKEND === 'ehrbase' ? '/api/clinical' : '/api/fhir';
+}
 const VALID_STATUS = new Set(['final', 'amended', 'corrected', 'preliminary']);
 
 export type FetchObservationsOpts = {
@@ -16,6 +22,7 @@ export type FetchObservationsOpts = {
 };
 
 function toProxyUrl(url: string): string {
+  const FHIR_PROXY = fhirProxyBase();
   if (url.startsWith(FHIR_PROXY)) return url;
   try {
     const parsed = new URL(url, 'http://local');
@@ -30,6 +37,7 @@ function toProxyUrl(url: string): string {
 }
 
 function buildSearchUrl(opts: FetchObservationsOpts): string {
+  const FHIR_PROXY = fhirProxyBase();
   const params = new URLSearchParams();
   params.set('patient', opts.patientId);
   if (opts.category) params.set('category', opts.category);

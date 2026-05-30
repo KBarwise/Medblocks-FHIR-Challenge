@@ -1,6 +1,6 @@
 'use server';
 
-import { fhir } from '@/lib/fhir/client';
+import { clinicalFhir } from '@/lib/fhir/client';
 import { assertIncretinPrescribingAllowed } from '@/lib/clinical/incretin-prescribing-guards';
 import { conditionsForPrescriptionScreening } from '@/lib/clinical/screening-conditions';
 import { resolveWeightManagementPathway } from '@/lib/clinical/weight-management-pathway';
@@ -37,6 +37,6 @@ export async function submitPrescription(args: {
     doseUnit: args.doseUnit,
     frequencyPeriodDays: 7,
   });
-  const created = await fhir.create<MedicationRequest>('MedicationRequest', resource);
+  const created = await clinicalFhir.create<MedicationRequest>('MedicationRequest', resource);
   return created;
 }

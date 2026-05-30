@@ -1,0 +1,26 @@
+# NUM FHIR Bridge → remote EHRbase + admin FHIR (Codemuse)
+# Image: https://hub.docker.com/r/numresearchdataplatform/num-fhir-bridge
+# Source: https://github.com/NUM-Forschungsdatenplattform/num-fhir-bridge
+
+services:
+  fhir-bridge:
+    image: numresearchdataplatform/num-fhir-bridge:${FHIR_BRIDGE_IMAGE_TAG:-latest}
+    container_name: codemuse-fhir-bridge
+    ports:
+      - "${FHIR_BRIDGE_PORT:-8888}:8888"
+    environment:
+      SPRING_CONFIG_ADDITIONAL_LOCATION: file:/config/application.codemuse.yml
+      FHIR_BRIDGE_OPENEHR_URL: ${EHRBASE_BASE_URL:-https://ehrbase.codemuseai.com/ehrbase/}
+      FHIR_BRIDGE_OPENEHR_SECURITY_TYPE: ${EHRBASE_SECURITY_TYPE:-none}
+      FHIR_BRIDGE_OPENEHR_SECURITY_USER_NAME: ${EHRBASE_USER:-}
+      FHIR_BRIDGE_OPENEHR_SECURITY_USER_PASSWORD: ${EHRBASE_PASSWORD:-}
+      DEMOGRAPHICS_PATIENT_URL: ${ADMIN_FHIR_PATIENT_URL:-https://term.codemuseai.com/fhir/Patient/}
+    volumes:
+      - ./application.codemuse.yml:/config/application.codemuse.yml:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8888/fhir-bridge/fhir/metadata >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s

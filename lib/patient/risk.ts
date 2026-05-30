@@ -1,4 +1,4 @@
-import { fhir } from '@/lib/fhir/client';
+import { clinicalFhir } from '@/lib/fhir/client';
 import { dedupeConditionsBySnomedCode } from '@/lib/clinical/conditions';
 import { filterDisorderConditions } from '@/lib/clinical/conditions-server';
 import { evaluateSignals, splitBundle, type SafetySignal, type Severity } from '@/lib/signals/rules';
@@ -49,12 +49,12 @@ const emptyBundle: Bundle = { resourceType: 'Bundle', type: 'searchset', entry: 
 
 export async function loadPatientRiskSnapshot(patientId: string): Promise<PatientRiskSummary> {
   const [obsBundle, condBundle] = await Promise.all([
-    fhir.search<Bundle<Observation>>('Observation', {
+    clinicalFhir.search<Bundle<Observation>>('Observation', {
       patient: patientId,
       _count: 200,
       _sort: '-date',
     }).catch(() => emptyBundle as Bundle<Observation>),
-    fhir.search<Bundle<Condition>>('Condition', {
+    clinicalFhir.search<Bundle<Condition>>('Condition', {
       patient: patientId,
       _count: 100,
     }).catch(() => emptyBundle as Bundle<Condition>),
@@ -75,7 +75,7 @@ export async function loadIncretinCohortPatients(): Promise<{
   error?: string;
 }> {
   try {
-    const meds = await fhir.search<Bundle>('MedicationRequest', {
+    const meds = await clinicalFhir.search<Bundle>('MedicationRequest', {
       status: 'active',
       _include: 'MedicationRequest:patient',
       _count: 200,
@@ -146,7 +146,7 @@ export async function loadCohortRiskDashboard(opts?: {
 
   let medByPatient = new Map<string, MedicationRequest>();
   try {
-    const meds = await fhir.search<Bundle<MedicationRequest>>('MedicationRequest', {
+    const meds = await clinicalFhir.search<Bundle<MedicationRequest>>('MedicationRequest', {
       status: 'active',
       _include: 'MedicationRequest:patient',
       _count: 200,

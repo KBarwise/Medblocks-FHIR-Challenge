@@ -1,13 +1,15 @@
-/** Product branding (shared across all clinic deployments). */
-export const PRODUCT_NAME = 'Sentinel';
-export const PRODUCT_VENDOR = 'Lucea Health';
+/** Product branding — override via env for separate Vercel product lines. */
+
+export const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME ?? 'Sentinel';
+export const PRODUCT_VENDOR = process.env.NEXT_PUBLIC_PRODUCT_VENDOR ?? 'Codemuse';
 export const PRODUCT_FULL_NAME = `${PRODUCT_NAME} by ${PRODUCT_VENDOR}`;
 
 export const PRODUCT_DESCRIPTION =
-  'Clinical surveillance and workflow for incretin therapy — powered by Lucea Health.';
+  process.env.NEXT_PUBLIC_PRODUCT_DESCRIPTION
+  ?? 'Clinical workflow and incretin therapy surveillance — admin data on FHIR, clinical chart on EHRbase.';
 
 /** Default when no clinic display name has been configured. */
-export const DEFAULT_CLINIC_NAME = 'Demo Clinic';
+export const DEFAULT_CLINIC_NAME = process.env.NEXT_PUBLIC_DEFAULT_CLINIC_NAME ?? 'Demo Clinic';
 
 /** Browser tab and metadata: clinic first, product second. */
 export function documentTitle(clinicName: string): string {

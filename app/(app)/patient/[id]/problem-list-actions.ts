@@ -7,7 +7,7 @@ import { conditionSnomedCode, isProblemListItem } from '@/lib/clinical/condition
 import { loadProblemListConditions } from '@/lib/clinical/conditions-server';
 import type { ProblemListDiagnosis } from '@/lib/clinical/diagnosis-qualifiers';
 import { applyConditionQualifiers, buildCondition } from '@/lib/fhir/builders';
-import { fhir } from '@/lib/fhir/client';
+import { clinicalFhir } from '@/lib/fhir/client';
 import type { Bundle, Condition } from '@/lib/fhir/resources';
 
 function assertClinicalWrite(): void {
@@ -23,7 +23,7 @@ function revalidatePatient(patientId: string) {
 }
 
 async function listPatientConditions(patientId: string): Promise<Condition[]> {
-  const bundle = await fhir.search<Bundle<Condition>>('Condition', {
+  const bundle = await clinicalFhir.search<Bundle<Condition>>('Condition', {
     patient: patientId,
     _count: 200,
   }).catch(() => ({ resourceType: 'Bundle' as const, type: 'searchset' as const, entry: [] }));
@@ -47,12 +47,12 @@ export async function addProblemListItem(
       clinicalStatus: diagnosis.clinicalStatus,
       verification: diagnosis.verification,
     });
-    await fhir.update<Condition>('Condition', match.id, updated);
+    await clinicalFhir.update<Condition>('Condition', match.id, updated);
     revalidatePatient(patientId);
     return { ok: true, conditionId: match.id };
   }
 
-  const created = await fhir.create<Condition>(
+  const created = await clinicalFhir.create<Condition>(
     'Condition',
     buildCondition({
       patientId,
@@ -76,7 +76,7 @@ export async function updateProblemListItem(
 ): Promise<{ ok: true }> {
   assertClinicalWrite();
 
-  const condition = await fhir.read<Condition>('Condition', conditionId);
+  const condition = await clinicalFhir.read<Condition>('Condition', conditionId);
   if (!isProblemListItem(condition)) {
     throw new Error('Only problem-list conditions can be edited here.');
   }
@@ -85,7 +85,7 @@ export async function updateProblemListItem(
     clinicalStatus: patch.clinicalStatus,
     verification: patch.verification,
   });
-  await fhir.update<Condition>('Condition', conditionId, updated);
+  await clinicalFhir.update<Condition>('Condition', conditionId, updated);
   revalidatePatient(patientId);
   return { ok: true };
 }
@@ -97,7 +97,7 @@ export async function removeProblemListItem(
 ): Promise<{ ok: true }> {
   assertClinicalWrite();
 
-  const condition = await fhir.read<Condition>('Condition', conditionId);
+  const condition = await clinicalFhir.read<Condition>('Condition', conditionId);
   if (!isProblemListItem(condition)) {
     throw new Error('Only problem-list conditions can be removed here.');
   }
@@ -108,7 +108,7 @@ export async function removeProblemListItem(
       (condition.verificationStatus?.coding?.[0]?.code as ProblemListDiagnosis['verification'])
       ?? 'confirmed',
   });
-  await fhir.update<Condition>('Condition', conditionId, updated);
+  await clinicalFhir.update<Condition>('Condition', conditionId, updated);
   revalidatePatient(patientId);
   return { ok: true };
 }

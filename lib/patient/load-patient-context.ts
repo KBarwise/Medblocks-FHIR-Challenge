@@ -1,4 +1,4 @@
-import { fhir } from '@/lib/fhir/client';
+import { adminFhir, clinicalFhir } from '@/lib/fhir/client';
 import { dedupeConditionsBySnomedCode } from '@/lib/clinical/conditions';
 import {
   filterDisorderConditions,
@@ -12,10 +12,16 @@ import type { Bundle, Condition, MedicationRequest, Observation, Patient } from 
 export async function loadPatientContext(id: string) {
   const emptyBundle: Bundle = { resourceType: 'Bundle', type: 'searchset', entry: [] };
   const [patient, obsBundle, condBundle, medBundle] = await Promise.all([
-    fhir.read<Patient>('Patient', id).catch(() => null),
-    fhir.search<Bundle<Observation>>('Observation', { patient: id, _count: 200, _sort: '-date' }).catch(() => emptyBundle as Bundle<Observation>),
-    fhir.search<Bundle<Condition>>('Condition', { patient: id, _count: 100 }).catch(() => emptyBundle as Bundle<Condition>),
-    fhir.search<Bundle<MedicationRequest>>('MedicationRequest', { patient: id, status: 'active' }).catch(() => emptyBundle as Bundle<MedicationRequest>),
+    adminFhir.read<Patient>('Patient', id).catch(() => null),
+    clinicalFhir
+      .search<Bundle<Observation>>('Observation', { patient: id, _count: 200, _sort: '-date' })
+      .catch(() => emptyBundle as Bundle<Observation>),
+    clinicalFhir
+      .search<Bundle<Condition>>('Condition', { patient: id, _count: 100 })
+      .catch(() => emptyBundle as Bundle<Condition>),
+    clinicalFhir
+      .search<Bundle<MedicationRequest>>('MedicationRequest', { patient: id, status: 'active' })
+      .catch(() => emptyBundle as Bundle<MedicationRequest>),
   ]);
   const observations = splitBundle<Observation>(obsBundle, 'Observation');
   const allConditions = splitBundle<Condition>(condBundle, 'Condition');
