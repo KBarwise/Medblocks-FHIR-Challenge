@@ -3,6 +3,7 @@ import {
   getClinicalFhirServerConfig,
   getEhrbaseOpenEhrUrl,
   getEhrbaseOpenEhrV1BaseUrl,
+  getOpenFhirUrl,
   usesSeparateClinicalStore,
 } from './config';
 import { resolveFhirServerConfig } from '@/lib/fhir/servers';
@@ -21,6 +22,22 @@ export function getDeploymentBackendSummary() {
     clinicalFhirUrl: clinical.baseUrl,
     ehrbaseOpenEhrUrl: getEhrbaseOpenEhrUrl(),
     ehrbaseOpenEhrV1Url: getEhrbaseOpenEhrV1BaseUrl(),
+    openFhirUrl: getOpenFhirUrl(),
     usesFhirBridge: clinicalBackend === 'ehrbase',
   };
+}
+
+/** Optional health probe for openFHIR (mapping engine). */
+export async function probeOpenFhirHealth(): Promise<'up' | 'down' | 'unknown'> {
+  try {
+    const res = await fetch(`${getOpenFhirUrl()}/health`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return 'down';
+    const text = (await res.text()).trim().toUpperCase();
+    return text === 'UP' ? 'up' : 'unknown';
+  } catch {
+    return 'down';
+  }
 }

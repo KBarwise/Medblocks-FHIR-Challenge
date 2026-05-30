@@ -10,12 +10,12 @@ import { getTerminologyConfigForAdmin } from '@/lib/terminology/config';
 import { FHIR_COOKIE } from '@/lib/fhir/servers';
 import { TERMINOLOGY_COOKIE } from '@/lib/terminology/servers';
 import { PRODUCT_FULL_NAME } from '@/lib/clinic/branding';
-import { getDeploymentBackendSummary } from '@/lib/ehr/deployment-info';
+import { getDeploymentBackendSummary, probeOpenFhirHealth } from '@/lib/ehr/deployment-info';
 import { Database, PlugZap, Settings } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
   const fhir = getFhirServerConfigForAdmin();
   const terminology = getTerminologyConfigForAdmin();
   const jar = cookies();
@@ -23,6 +23,7 @@ export default function AdminSettingsPage() {
   const customTermEclUrl = jar.get(TERMINOLOGY_COOKIE.eclUrl)?.value ?? '';
   const customTermOpsUrl = jar.get(TERMINOLOGY_COOKIE.opsUrl)?.value ?? '';
   const backends = getDeploymentBackendSummary();
+  const openFhirHealth = backends.separateClinicalStore ? await probeOpenFhirHealth() : undefined;
 
   return (
     <div className="p-6 max-w-5xl">
@@ -54,8 +55,17 @@ export default function AdminSettingsPage() {
               rel="noreferrer"
             >
               FHIR Bridge
-            </a>
-            ; set <code className="text-[11px]">FHIR_BRIDGE_URL</code> in Vercel.
+            </a>{' '}
+            (set <code className="text-[11px]">FHIR_BRIDGE_URL</code>).{' '}
+            <a
+              href="https://open-fhir.com"
+              className="text-brand-600 underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              openFHIR
+            </a>{' '}
+            configures FHIR ↔ openEHR mappings — not the app&apos;s clinical FHIR endpoint.
           </p>
           <dl className="text-[12px] space-y-2">
             <div>
@@ -74,6 +84,19 @@ export default function AdminSettingsPage() {
               <dd className="text-ink-500 mt-0.5">
                 Bridge env: openEHR v1 base{' '}
                 <span className="font-mono text-ink-700">{backends.ehrbaseOpenEhrV1Url}</span>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ink-500">openFHIR (mapping engine)</dt>
+              <dd className="font-mono text-ink-800 break-all">{backends.openFhirUrl || '—'}</dd>
+              <dd className="text-ink-500 mt-0.5">
+                Swagger UI · templates &amp; mappers
+                {openFhirHealth === 'up' && (
+                  <span className="ml-1.5 text-accent font-medium">· health UP</span>
+                )}
+                {openFhirHealth === 'down' && (
+                  <span className="ml-1.5 text-danger font-medium">· unreachable</span>
+                )}
               </dd>
             </div>
           </dl>

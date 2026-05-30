@@ -66,15 +66,15 @@ export function PatientWeightTracker({ onBack }: { onBack: () => void }) {
 
   function loadProgress(identity: { given: string; family: string; birthDate: string }) {
     startTransition(async () => {
-      try {
-        const r = await fetchPatientWeightProgress(identity);
-        setPatientId(r.patientId);
-        setPatientName(r.patientName);
-        setSummary(r.summary);
-        setStep('track');
-      } catch (e) {
-        setError((e as Error).message);
+      const r = await fetchPatientWeightProgress(identity);
+      if (!r.ok) {
+        setError(r.error);
+        return;
       }
+      setPatientId(r.data.patientId);
+      setPatientName(r.data.patientName);
+      setSummary(r.data.summary);
+      setStep('track');
     });
   }
 
@@ -106,14 +106,14 @@ export function PatientWeightTracker({ onBack }: { onBack: () => void }) {
       return;
     }
     startTransition(async () => {
-      try {
-        const r = await logPatientWeight({ given, family, birthDate, weightKg });
-        setSummary(r.summary);
-        setWeightInput('');
-        setStep('saved');
-      } catch (err) {
-        setError((err as Error).message);
+      const r = await logPatientWeight({ given, family, birthDate, weightKg });
+      if (!r.ok) {
+        setError(r.error);
+        return;
       }
+      setSummary(r.data.summary);
+      setWeightInput('');
+      setStep('saved');
     });
   }
 

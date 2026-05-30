@@ -35,6 +35,16 @@ export function getEhrbaseOpenEhrV1BaseUrl(): string {
 }
 
 /**
+ * openFHIR mapping engine (FHIR ↔ openEHR). Swagger at `/swagger-ui`.
+ * Not a FHIR R4 REST server — the app does not call this for Observation CRUD.
+ * Used by operators for template/mapper configuration alongside EHRbase.
+ */
+export function getOpenFhirUrl(): string {
+  const raw = process.env.OPENFHIR_URL?.trim() ?? 'https://openfhir.codemuseai.com';
+  return raw.replace(/\/$/, '');
+}
+
+/**
  * FHIR R4 base URL for clinical resources.
  * With `CLINICAL_BACKEND=ehrbase` this must be a running
  * [FHIR Bridge](https://github.com/ehrbase/fhir-bridge) instance — not EHRbase’s openEHR Swagger API.

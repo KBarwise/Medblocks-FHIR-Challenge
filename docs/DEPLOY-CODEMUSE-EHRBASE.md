@@ -34,6 +34,27 @@ This app speaks **FHIR** for chart data. You need **[FHIR Bridge](https://github
 | Administrative FHIR | Patient, Practitioner, Appointment, kiosk queues | `FHIR_BASE_URL` |
 | FHIR Bridge | FHIR R4 ↔ openEHR compositions | `FHIR_BRIDGE_URL` |
 | EHRbase | Persistent openEHR store | `EHRBASE_OPENEHR_URL` (bridge config, not the Next app) |
+| openFHIR | FHIR ↔ openEHR mapping / templates | `OPENFHIR_URL` (operator config; not the app clinical API) |
+
+## openFHIR (configured)
+
+**openFHIR** at `https://openfhir.codemuseai.com` is the [openFHIR mapping engine](https://open-fhir.com) — Swagger at `/swagger-ui`, health at `/health`. It exposes `/openfhir/toopenehr`, `/openfhir/tofhir`, and template/mapper configuration APIs.
+
+openFHIR is **not** a FHIR R4 REST server. Do **not** set `FHIR_BRIDGE_URL` to the openFHIR host — Observation search/create will not work there.
+
+| Service | What the Sentinel app calls | URL |
+|---------|----------------------------|-----|
+| Admin FHIR | Patient, Appointment, … | `https://term.codemuseai.com/fhir` |
+| Clinical FHIR | Observation, Condition, MedicationRequest, … | **`FHIR_BRIDGE_URL`** (FHIR Bridge — still required) |
+| EHRbase | openEHR persistence (via bridge) | `https://ehrbase.codemuseai.com/ehrbase` |
+| openFHIR | Mapping/templates (operators) | `https://openfhir.codemuseai.com` |
+
+Verify openFHIR:
+
+```bash
+curl -sS "https://openfhir.codemuseai.com/health"
+# → UP
+```
 
 ## Deploy FHIR Bridge (operators)
 
@@ -75,6 +96,7 @@ curl -sS "http://localhost:8888/fhir-bridge/fhir/metadata" | head
 | `FHIR_BASE_URL` | `https://term.codemuseai.com/fhir` | Admin FHIR |
 | `FHIR_BRIDGE_URL` | `https://fhir-bridge.example.com/fhir-bridge/fhir` | Clinical FHIR (this app) |
 | `EHRBASE_OPENEHR_URL` | `https://ehrbase.codemuseai.com/ehrbase` | Documentation / bridge operator reference |
+| `OPENFHIR_URL` | `https://openfhir.codemuseai.com` | openFHIR mapping engine (operator reference) |
 | `EHRBASE_BEARER_TOKEN` / `FHIR_BRIDGE_BEARER_TOKEN` | (secret) | Auth if enabled |
 | `CLINICAL_BACKEND` | `ehrbase` | Use bridge for clinical store |
 | `NEXT_PUBLIC_CLINICAL_BACKEND` | `ehrbase` | Browser trends → `/api/clinical` |
@@ -93,6 +115,17 @@ curl -sS "http://localhost:8888/fhir-bridge/fhir/metadata" | head
 ## Templates and mappings
 
 FHIR Bridge maps FHIR resources to openEHR templates. Ensure required archetypes/templates exist on your EHRbase instance; otherwise creates may fail even when bridge and URLs are correct.
+
+## Full FHIR app (single server)
+
+If you run **one** FHIR server for everything (no EHRbase split), use a separate Vercel project or set:
+
+```env
+CLINICAL_BACKEND=fhir
+FHIR_BASE_URL=https://term.codemuseai.com/fhir
+```
+
+openFHIR and EHRbase are optional backend plumbing; the app talks only to `FHIR_BASE_URL`. Kiosk weight tracking and nurse vitals write Observations there directly.
 
 ## Single-server fallback
 
